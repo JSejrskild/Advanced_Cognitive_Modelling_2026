@@ -42,3 +42,9 @@ WSLSAgent_f <- function(prevChoice, feedback, noise = 0) {
   return(choice)
 }
 
+RLAgent_f <- function() {
+  
+}
+
+
+
