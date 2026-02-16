@@ -1,5 +1,5 @@
 
-RandomAgent_f <- function(n_trials, rate = 0.5, noise = 0) {
+RandomAgent_f <- function(n_trials, rate = 0.5, noise = 0, returnList = FALSE) {
   # Input validation
   if (!is.numeric(rate) || rate < 0 || rate > 1) {
     stop("Rate must be a probability between 0 and 1.")
@@ -19,7 +19,13 @@ RandomAgent_f <- function(n_trials, rate = 0.5, noise = 0) {
     choices[noise_trials] <- rbinom(sum(noise_trials), size = 1, prob = 0.5)
   }
   
-  return(choices)
+  print(choices)
+  
+  if (returnList) {
+    return(list(choice=choices))
+  } else {
+    return(choices)
+  }
 }
 
 WSLSAgent_f <- function(prevChoice, feedback, noise = 0) {
@@ -39,7 +45,7 @@ WSLSAgent_f <- function(prevChoice, feedback, noise = 0) {
     choice <- sample(c(0, 1), 1)
   }
   
-  return(choice)
+  return(list(choice=choice))
 }
 
 RLAgent_f <- function(prevRate, learningRate, feedback, noise = 0) {
@@ -68,16 +74,16 @@ RLAgent_f <- function(prevRate, learningRate, feedback, noise = 0) {
 }
 
 # Reinforcement Learning + Random Mixture model agent
-RL_R_agent_f <- function(
+RLRAgent_f <- function(
     prevRate,
     prevChoice,
     learningRate,
     feedback,
-    noise = 0,
-    kSwitch = 3,
     winStreak = 0,
     lossStreak = 0,
-    losing=FALSE
+    losing=FALSE,
+    noise = 0,
+    kSwitch = 3
 ) {
   
   # Increase win/loss streak count
@@ -94,9 +100,9 @@ RL_R_agent_f <- function(
     losing <- !losing
   }
   
-  # Select and call the appropriate function
+  # Call Random if in "losing" state else Reinforcement learning
   if (losing) {
-    result <- RandomAgent_f(1, rate = 0.5, noise = noise)
+    result <- RandomAgent_f(1, rate = 0.5, noise = noise, returnList=TRUE)
   } else {
     result <- RLAgent_f(prevRate, learningRate, feedback, noise)
   }
