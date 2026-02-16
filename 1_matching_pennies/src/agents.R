@@ -42,3 +42,32 @@ WSLSAgent_f <- function(prevChoice, feedback, noise = 0) {
   return(choice)
 }
 
+RLAgent_f <- function(prevRate, learningRate, feedback, noise = 0) {
+  # Input validation
+  if (!is.numeric(prevRate) || prevRate < 0 || prevRate > 1) stop("Previous rate must be 0 or 1.")
+  if (!is.numeric(learningRate) || learningRate < 0 || learningRate > 1) stop("Learning rate must be 0 or 1.")
+  if (!feedback %in% c(0, 1)) stop("Feedback must be 0 or 1.")
+  if (!is.numeric(noise) || noise < 0 || noise > 1) stop("Noise must be a probability between 0 and 1.")
+  
+  # RW Equation
+  currentRate = prevRate + learningRate * ( feedback - prevRate)
+  
+  # Choice function
+  choice = rbinom(1, size = 1, prob = currentRate)
+  
+  
+  # NOISE
+  # Apply noise if specified
+  if (noise > 0 && runif(1) < noise) {
+    # Override with a random 50/50 choice
+    choice <- sample(c(0, 1), 1)
+  }
+  
+  return(list(choice = choice,
+              currentRate = currentRate))
+}
+
+BadSportAgent_f <- function() {
+  
+}
+
