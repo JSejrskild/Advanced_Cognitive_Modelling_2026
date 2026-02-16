@@ -37,8 +37,8 @@ for (i in 2:n_trials){
   self_choice[i] <- choicenrate$choice
   self_rate[i] <- choicenrate$rate
   
-  otherwin <- feedback
+  otherwin[i-1] <- feedback
 }
 
-df <- tibble(self_choice, self_rate, other, trial = seq(n_trials), feedback)
+df <- tibble(self_choice, self_rate, other, trial = seq(n_trials), feedback, otherwin)
 
