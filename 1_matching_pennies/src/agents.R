@@ -67,7 +67,46 @@ RLAgent_f <- function(prevRate, learningRate, feedback, noise = 0) {
               currentRate = currentRate))
 }
 
-BadSportAgent_f <- function() {
+# Reinforcement Learning + Random Mixture model agent
+RL_R_agent_f <- function(
+    prevRate,
+    prevChoice,
+    learningRate,
+    feedback,
+    noise = 0,
+    kSwitch = 3,
+    winStreak = 0,
+    lossStreak = 0
+) {
   
+  # Increase win/loss streak count
+  if (prevChoice == feedback) {
+    winStreak <- winStreak + 1
+    lossStreak <- 0
+  } else {
+    lossStreak <- lossStreak + 1
+    winStreak <- 0
+  }
+  
+  # Set 'losing' based on lossStreak
+  losing <- ifelse(lossStreak >= kSwitch, TRUE, FALSE)
+  
+  # Select and call the appropriate function
+  if (losing) {
+    result <- RandomAgent_f(1, rate = 0.5, noise = noise)
+  } else {
+    result <- RLAgent_f(prevRate, learningRate, feedback, noise)
+  }
+  
+  # Extract results
+  choice <- result$choice
+  currentRate <- ifelse(losing, 0.5, result$currentRate)
+  
+  # Return the results
+  return(list(
+    choice = choice,
+    currentRate = currentRate,
+    winStreak = winStreak,
+    lossStreak = lossStreak
+  ))
 }
-

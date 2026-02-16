@@ -4,7 +4,7 @@ setwd("../1_matching_pennies")
 print(getwd())
 print(list.files("."))
 # imports
-pacman::p_load("tidyverse", "purrr")
+pacman::p_load("tidyverse", "purrr", "ggnewscale")
 # import internal
 source("src/agents.R")
 
@@ -43,7 +43,9 @@ RL_vs_RL <- function(n_trials, learningRate, noise=0, initRateA=0.5, initRateB=0
     rateA = rateA,
     rateB = rateB,
     learningRate = learningRate, 
-    noise = noise
+    noise = noise,
+    initRateA = initRateA,
+    initRateB = initRateB
     )
   
   temp <- temp %>% 
@@ -71,14 +73,23 @@ ggplot(result, aes(trial)) +
 
 learningRateList <- seq(from = 0, to = 1, by = 0.1)
 noiseList <- seq(from = 0, to = 1, by = 0.1)
+initRateAList <- seq(from = 0, to = 0.5, by = 0.1)
+initRateBList <- seq(from = 0, to = 0.5, by = 0.1)
 
-combinations <- expand.grid(learningRate = learningRateList, noise = noiseList)
+combinations <- expand.grid(
+  learningRate = learningRateList, 
+  noise = noiseList, 
+  initRateA = initRateAList, 
+  initRateB = initRateBList
+  )
 
 results <- combinations %>% 
   pmap_dfr(~ RL_vs_RL(
     n_trials = n_trials,
     learningRate = ..1,
-    noise = ..2
+    noise = ..2,
+    initRateA = ..3,
+    initRateB = ..4
   ))
 
 unique(results$learningRate)
@@ -100,9 +111,55 @@ ggplot(results, aes(trial)) +
   theme_classic() + 
   facet_wrap(~learningRate)
 
+ggplot(results, aes(trial)) + 
+  geom_line(aes(y=cumulativeRateA), color = "blue", alpha = 0.2) +
+  geom_line(aes(y=cumulativeRateB), color = "red", alpha=0.2) + 
+  geom_hline(yintercept=0.5) + 
+  ylim(0,1) + 
+  theme_classic() + 
+  facet_wrap(~learningRate)
+
+ggplot(results, aes(trial)) + 
+  geom_line(aes(y=cumulativeRateA), color = "blue", alpha = 0.2) +
+  geom_line(aes(y=cumulativeRateB), color = "red", alpha=0.2) + 
+  geom_hline(yintercept=0.5) + 
+  ylim(0,1) + 
+  theme_classic() + 
+  facet_wrap(~noise)
+
+# Adding different initial starting rates
+
+learningRateList <- seq(from = 0, to = 1, by = 0.2)
+initRateAList <- seq(from = 0, to = 0.5, by = 0.1)
+initRateBList <- seq(from = 0, to = 0.5, by = 0.1)
+
+combinations <- expand.grid(
+  learningRate = learningRateList,
+  initRateA = initRateAList, 
+  initRateB = initRateBList
+)
+
+results <- combinations %>% 
+  pmap_dfr(~ RL_vs_RL(
+    n_trials = n_trials,
+    learningRate = ..1,
+    noise = .1,
+    initRateA = ..2,
+    initRateB = ..3
+  ))
+
+ggplot(results, aes(trial)) + 
+  geom_line(aes(y=cumulativeRateA, color=learningRate), alpha=0.2) +
+  scale_color_gradient(low="red", high="darkblue")+
+  new_scale_color() +
+  geom_line(aes(y=cumulativeRateB, color=learningRate), alpha=0.2) +
+  scale_color_gradient(low="yellow", high="darkgreen") +
+  geom_hline(yintercept=0.5) + 
+  ylim(0,1) + 
+  theme_classic() + 
+  facet_grid(initRateA ~ initRateB)
 
 # -------------------------------------------
 # ---- Running Parallel across 100 agents ---
 # -------------------------------------------
-
 
