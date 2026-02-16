@@ -3,14 +3,20 @@ setwd("../1_matching_pennies")
 print(getwd())
 print(list.files("."))
 # imports
-pacman::p_load("tidyverse", "purrr", "ggnewscale")
+pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future")
 # import internal
 source("src/agents.R")
+# Detect cores
+cores <- detectCores() # detect how many cpu cores
+print(paste0("All CPU Cores: ", cores))
+nWorkers <- cores - 2 # free two of them
+# Set seed
+set.seed(271)
 
 n_trials <- 120
 n_agents <- 100
 
-# RL vs RL-R
+# Build RL vs RL-Random ("Bad Loser") Competition
 RL_vs_RLR <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=3) {
   RLchoicesA <- rep(NA, n_trials)
   rateA <- rep(NA, n_trials)
@@ -67,7 +73,7 @@ RL_vs_RLR <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=3)
     learningRate = learningRate, 
     noise = noise,
     initRateA = initRateA,
-    
+    kSwitch = kSwitch
   )
   
   temp <- temp %>% 
@@ -77,6 +83,7 @@ RL_vs_RLR <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=3)
     )
 }
 
+# Run and return data for N Trials
 result <- RL_vs_RLR(
   n_trials = n_trials, 
   learningRate = 0.1, 
@@ -85,9 +92,63 @@ result <- RL_vs_RLR(
   kSwitch=3
 )
 
-ggplot(result, aes(trial)) + 
-  geom_line(aes(y=cumulativeRateA), color="blue") +
-  geom_line(aes(y=cumulativeRateB), color="red") + 
-  geom_hline(yintercept=0.5) + 
-  ylim(0,1) + 
-  theme_classic()
+# ------------------------------------
+# - Loop over parameter combinations -
+# ------------------------------------
+learningRateList <- seq(from = 0, to = 1, by = 0.1)
+noiseList <- seq(from = 0, to = 1, by = 0.1)
+kSwitchList <- seq(from = 1, to = 5, by = 1)
+
+combinations <- expand.grid(
+  learningRate = learningRateList, 
+  noise = noiseList, 
+  kSwitchList = kSwitchList
+)
+
+results <- combinations %>% 
+  pmap_dfr(~ RL_vs_RLR(
+    n_trials = n_trials,
+    learningRate = ..1,
+    noise = ..2,
+    initRateA = 0.5,
+    kSwitch = ..3
+  ))
+
+#-----------------------------------
+#- Run 100 agent pairs in parallel -
+#-----------------------------------
+
+plan(multisession, workers = nWorkers) # prepare parrallel processing
+
+# Create a data frame with all combinations and agent IDs
+agent_combinations <- combinations %>%
+  slice(rep(row_number(), each = n_agents)) %>%
+  mutate(agent_id = rep(1:n_agents, nrow(combinations)))
+
+simulate_agent_pair <- function(learningRate, noise, kSwitch, agent_id) {
+  RL_vs_RLR(
+    n_trials = n_trials,
+    learningRate = learningRate,
+    noise = noise,
+    initRateA = 0.5,
+    kSwitch = kSwitch
+  ) %>%
+    mutate(agent_id = agent_id)
+}
+
+resultsPar <- agent_combinations %>%
+  future_pmap_dfr(
+    ~ simulate_agent_pair(
+      learningRate = ..1,
+      noise = ..2,
+      kSwitch = ..3,
+      agent_id = ..4
+    ),
+    .options = furrr_options(seed = TRUE)
+  )
+
+plan(sequential) # reverse to sequential processing
+
+# Save results
+filepath <- "data/RL_vs_RLR.csv"
+write.csv(resultsPar, filepath)

@@ -19,8 +19,6 @@ RandomAgent_f <- function(n_trials, rate = 0.5, noise = 0, returnList = FALSE) {
     choices[noise_trials] <- rbinom(sum(noise_trials), size = 1, prob = 0.5)
   }
   
-  print(choices)
-  
   if (returnList) {
     return(list(choice=choices))
   } else {
