@@ -1,0 +1,17 @@
+---
+title: "plotting"
+author: "Ditlev K"
+date: "2026-02-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+pacman::p_load('ggplot2', 'tidyverse')
+```
+
+```{r}
+df <- df %>% mutate(cumulative_rateSelf = cumsum(1-otherwin)/seq_along (1-otherwin), cumulative_rateOther=cumsum(otherwin) /seq_along(otherwin))
+
+ggplot(df)+theme_classic()+geom_line(color="red",aes(trial,cumulative_rateSelf)) +geom_line(color="blue",aes(trial,cumulative_rateOther)) +geom_line(color="black", aes(trial,))+labs(title = "Red = RL, Blue = WSLS",y="cummulative rate",x= "trial")
+```
+
