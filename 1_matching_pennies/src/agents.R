@@ -76,7 +76,8 @@ RL_R_agent_f <- function(
     noise = 0,
     kSwitch = 3,
     winStreak = 0,
-    lossStreak = 0
+    lossStreak = 0,
+    losing=FALSE
 ) {
   
   # Increase win/loss streak count
@@ -88,8 +89,10 @@ RL_R_agent_f <- function(
     winStreak <- 0
   }
   
-  # Set 'losing' based on lossStreak
-  losing <- ifelse(lossStreak >= kSwitch, TRUE, FALSE)
+  # Toggle/Untoggle 'losing' if either streak reaches kSwitch
+  if ((losing && winStreak >= kSwitch) || (!losing && lossStreak >= kSwitch)) {
+    losing <- !losing
+  }
   
   # Select and call the appropriate function
   if (losing) {
@@ -107,6 +110,7 @@ RL_R_agent_f <- function(
     choice = choice,
     currentRate = currentRate,
     winStreak = winStreak,
-    lossStreak = lossStreak
+    lossStreak = lossStreak,
+    losing = losing
   ))
 }
