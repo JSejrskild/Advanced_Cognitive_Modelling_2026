@@ -48,8 +48,8 @@ WSLSAgent_f <- function(prevChoice, feedback, noise = 0) {
 
 RLAgent_f <- function(prevRate, learningRate, feedback, noise = 0) {
   # Input validation
-  if (!is.numeric(prevRate) || prevRate < 0 || prevRate > 1) stop("Previous rate must be 0 or 1.")
-  if (!is.numeric(learningRate) || learningRate < 0 || learningRate > 1) stop("Learning rate must be 0 or 1.")
+  if (!is.numeric(prevRate) || prevRate < 0 || prevRate > 1) stop("Previous rate must be between 0 or 1.")
+  if (!is.numeric(learningRate) || learningRate < 0 || learningRate > 1) stop("Learning rate must be between 0 or 1.")
   if (!feedback %in% c(0, 1)) stop("Feedback must be 0 or 1.")
   if (!is.numeric(noise) || noise < 0 || noise > 1) stop("Noise must be a probability between 0 and 1.")
   
@@ -83,6 +83,11 @@ RLRAgent_f <- function(
     noise = 0,
     kSwitch = 3
 ) {
+  # Input validation
+  if (!is.numeric(prevRate) || prevRate < 0 || prevRate > 1) stop("Previous rate must be between 0 or 1.")
+  if (!is.numeric(learningRate) || learningRate < 0 || learningRate > 1) stop("Learning rate must be between 0 or 1.")
+  if (!feedback %in% c(0, 1)) stop("Feedback must be 0 or 1.")
+  if (!is.numeric(noise) || noise < 0 || noise > 1) stop("Noise must be a probability between 0 and 1.")
   
   # Increase win/loss streak count
   if (prevChoice == feedback) {
