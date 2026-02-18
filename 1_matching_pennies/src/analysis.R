@@ -8,6 +8,12 @@ pacman::p_load("tidyverse")
 filepath <- "data/RLR_vs_WSLS.csv"
 raw <- read_csv(filepath)
 
+raw <- raw %>% 
+  mutate(
+    cumWinA = cumsum(winA) / seq_along(winA),
+    cumWinB = cumsum(winB) / seq_along(winB)
+ )
+
 #pick some parameter values for simplicity
 filtered <- raw %>%
   filter(learningRate == 0.1, noise == 0)
@@ -19,19 +25,30 @@ ggplot(filtered, aes(trial)) +
   ylim(0,1) + 
   theme_classic()
 
-# I can try to maybe do a mean of all agent cumulativeRates
-filteredMean <- raw %>%
-  filter(learningRate == 0.1, noise == 0) %>%
-  group_by(trial) %>%
-  summarise(
-    meanCumulativeRateA = mean(cumulativeRateA),
-    meanCumulativeRateB = mean(cumulativeRateB),
-    .groups = "drop"
-  )
+# 
+ggplot(filtered, aes(x = trial, group = agent_id)) + 
+  geom_line(aes(y = cumulativeWinA), color = "blue", alpha = 0.2) +
+  geom_line(aes(y = cumulativeWinB), color = "red", alpha = 0.2) + 
+  geom_hline(yintercept = 0.5) + 
+  ylim(0, 1) + 
+  theme_classic()
 
-ggplot(filteredMean, aes(trial)) + 
-  geom_line(aes(y=meanCumulativeRateA), color = "blue", alpha=0.2) +
-  geom_line(aes(y=meanCumulativeRateB), color = "red", alpha=0.2) +
+# I can try to maybe do a mean of all agent cumulativeRates
+filtered2 <- raw %>%
+  filter(noise == 0)
+
+ggplot(filtered2, aes(x=trial,y=cumulativeWinA, 
+                         group=learningRate, color = as.factor(learningRate)
+                         )) + 
+  stat_summary(fun=mean, geom="line") +
   geom_hline(yintercept=0.5) + 
   ylim(0,1) + 
-  theme_classic()
+  theme_classic() + 
+  labs(
+    title = "Average 'RL-R' performance vs. WSLS",
+    subtitle = "A very bad loser needs a high learning rate to win",
+    x = "Trial Number",
+    y = "Average Proportion Wins",
+    color = "Own Learning Rate"
+  ) +
+  facet_wrap(~ kSwitch)
