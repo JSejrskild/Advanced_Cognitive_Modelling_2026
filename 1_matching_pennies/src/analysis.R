@@ -35,3 +35,5 @@ ggplot(filteredMean, aes(trial)) +
   geom_hline(yintercept=0.5) + 
   ylim(0,1) + 
   theme_classic()
+
+# 
