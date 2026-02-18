@@ -90,7 +90,7 @@ RLRAgent_f <- function(
   if (!is.numeric(noise) || noise < 0 || noise > 1) stop("Noise must be a probability between 0 and 1.")
   
   # Increase win/loss streak count
-  if (prevChoice == feedback) {
+  if (feedback == feedback) {
     winStreak <- winStreak + 1
     lossStreak <- 0
   } else {
