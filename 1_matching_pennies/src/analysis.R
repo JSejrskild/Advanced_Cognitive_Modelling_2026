@@ -1,5 +1,7 @@
 print(getwd())
-setwd("../1_matching_pennies")
+#setwd("../1_matching_pennies")
+
+setwd("C:/Users/anelo/OneDrive - Grenaa Gymnasium/OneDrive/1 CogSci/ACM/Advanced_Cognitive_Modelling_2026/1_matching_pennies")
 print(getwd())
 print(list.files("."))
 # imports
