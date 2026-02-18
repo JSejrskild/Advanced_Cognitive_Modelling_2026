@@ -37,9 +37,18 @@ ggplot(filtered, aes(x = trial, group = agent_id)) +
 filtered2 <- raw %>%
   filter(noise == 0)
 
-ggplot(filtered2, aes(x=trial, color = as.factor(learningRate)
+ggplot(filtered2, aes(x=trial,y=cumulativeWinA, 
+                         group=learningRate, color = as.factor(learningRate)
                          )) + 
-  geom_line(aes(y=cumulativeWinA)) +
+  stat_summary(fun=mean, geom="line") +
   geom_hline(yintercept=0.5) + 
   ylim(0,1) + 
-  theme_classic()
+  theme_classic() + 
+  labs(
+    title = "Average 'RL-R' performance vs. WSLS",
+    subtitle = "A very bad loser needs a high learning rate to win",
+    x = "Trial Number",
+    y = "Average Proportion Wins",
+    color = "Own Learning Rate"
+  ) +
+  facet_wrap(~ kSwitch)
