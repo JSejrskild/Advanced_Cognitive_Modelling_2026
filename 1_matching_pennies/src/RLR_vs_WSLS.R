@@ -65,7 +65,7 @@ RLR_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=
     losingA[i] <- outputA$losing
     
     # WSLS Agent B picks Choice
-    outputB <- WSLSAgent_f(prevChoice = RLchoicesB[i-1], feedback = winB[i-1], noise = noise)
+    outputB <- WSLSAgent_f(prevChoice = RLchoicesB[i-1], feedback = winB[i-1], noise = 0)
     RLchoicesB[i] <- outputB$choice
     
     # decide win/loss
