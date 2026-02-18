@@ -149,6 +149,6 @@ resultsPar <- agent_combinations %>%
 
 plan(sequential) # reverse to sequential processing
 
-# Save results
+# Save results to csv
 filepath <- "data/RL_vs_RLR.csv"
 write.csv(resultsPar, filepath)

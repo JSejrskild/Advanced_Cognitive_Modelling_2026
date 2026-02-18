@@ -5,7 +5,7 @@ print(list.files("."))
 # imports
 pacman::p_load("tidyverse")
 
-filepath <- "data/RL_vs_RLR.csv"
+filepath <- "data/RLR_vs_WSLS.csv"
 raw <- read_csv(filepath)
 
 #pick some parameter values for simplicity
