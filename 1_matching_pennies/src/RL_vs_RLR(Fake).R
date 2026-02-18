@@ -1,6 +1,5 @@
 print(getwd())
-setwd("../")
-#setwd("../1_matching_pennies")
+setwd("../1_matching_pennies")
 print(getwd())
 print(list.files("."))
 # imports
@@ -10,9 +9,7 @@ source("src/agents.R")
 # Detect cores
 cores <- detectCores() # detect how many cpu cores
 print(paste0("All CPU Cores: ", cores))
-#nWorkers <- cores - 2 # free two of them
-nWorkers <- 30 # free two of them
-
+nWorkers <- cores - 2 # free two of them
 # Set seed
 set.seed(271)
 
@@ -20,14 +17,13 @@ n_trials <- 120
 n_agents <- 100
 
 # Build RL vs RL-Random ("Bad Loser") Competition
-RLR_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=3) {
+RL_vs_RLR <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=3) {
   RLchoicesA <- rep(NA, n_trials)
   rateA <- rep(NA, n_trials)
   winStreakA <- rep(NA, n_trials)
   lossStreakA <- rep(NA, n_trials)
   losingA <- rep(NA, n_trials)
-  winA <- rep(NA, n_trials)
-  winB <- rep(NA, n_trials)
+  
   
   RLchoicesB <- rep(NA, n_trials)
   
@@ -40,9 +36,6 @@ RLR_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=
   losingA[1] <- FALSE
   ## WSLS
   RLchoicesB[1] <- RandomAgent_f(1, rate = 0.5)
-  # decide on first wins/loss
-  winA[1] <- ifelse(RLchoicesA[1]==RLchoicesB[1], 1, 0)
-  winB[1] <- ifelse(RLchoicesA[1]==RLchoicesB[1], 0, 1)
   
   for (i in 2:n_trials){
     # RLR Agent A picks choice
@@ -50,7 +43,7 @@ RLR_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=
       prevRate = rateA[i-1],
       prevChoice = RLchoicesA[i-1],
       learningRate=learningRate, 
-      feedback = winA[i-1], 
+      feedback = RLchoicesB[i-1], 
       noise = noise,
       kSwitch = kSwitch,
       winStreak = winStreakA[i-1],
@@ -65,20 +58,14 @@ RLR_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=
     losingA[i] <- outputA$losing
     
     # WSLS Agent B picks Choice
-    outputB <- WSLSAgent_f(prevChoice = RLchoicesB[i-1], feedback = winB[i-1], noise = 0)
+    outputB <- WSLSAgent_f(prevChoice = RLchoicesB[i-1], feedback = RLchoicesA[i-1], noise = noise)
     RLchoicesB[i] <- outputB$choice
-    
-    # decide win/loss
-    winA[i] <- ifelse(RLchoicesA[i]==RLchoicesB[i], 1, 0)
-    winB[i] <- ifelse(RLchoicesA[i]==RLchoicesB[i], 0, 1)
   }
   
   temp <- tibble(
     trial = seq(n_trials), 
     choicesA = RLchoicesA, 
     choicesB = RLchoicesB,
-    winA = winA,
-    winB = winB,
     rateA = rateA,
     winStreakA = winStreakA,
     losingA = losingA,
@@ -92,14 +79,12 @@ RLR_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=
   temp <- temp %>% 
     mutate(
       cumulativeRateA = cumsum(choicesA) / seq_along(choicesA),
-      cumulativeRateB = cumsum(choicesB) / seq_along(choicesB),
-      cumulativeWinA = cumsum(winA) / seq_along(winA),
-      cumulativeWinB = cumsum(winB) / seq_along(winB),
+      cumulativeRateB = cumsum(choicesB) / seq_along(choicesB)
     )
 }
 
 # Run and return data for N Trials
-result <- RLR_vs_WSLS(
+result <- RL_vs_RLR(
   n_trials = n_trials, 
   learningRate = 0.1, 
   noise = 0,
@@ -121,7 +106,7 @@ combinations <- expand.grid(
 )
 
 results <- combinations %>% 
-  pmap_dfr(~ RLR_vs_WSLS(
+  pmap_dfr(~ RL_vs_RLR(
     n_trials = n_trials,
     learningRate = ..1,
     noise = ..2,
@@ -141,7 +126,7 @@ agent_combinations <- combinations %>%
   mutate(agent_id = rep(1:n_agents, nrow(combinations)))
 
 simulate_agent_pair <- function(learningRate, noise, kSwitch, agent_id) {
-  RLR_vs_WSLS(
+  RL_vs_RLR(
     n_trials = n_trials,
     learningRate = learningRate,
     noise = noise,
@@ -164,12 +149,6 @@ resultsPar <- agent_combinations %>%
 
 plan(sequential) # reverse to sequential processing
 
-# compute win/loss
-resultsPar <- resultsPar %>% 
-  mutate(
-    winA = ifelse(choicesA==choicesB, 1, 0)
-  )
-
 # Save results to csv
-filepath <- "data/RLR_vs_WSLS.csv"
+filepath <- "data/RL_vs_RLR.csv"
 write.csv(resultsPar, filepath)
