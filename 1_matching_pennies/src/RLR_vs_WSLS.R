@@ -26,7 +26,6 @@ RLR_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=
   winA <- rep(NA, n_trials)
   winB <- rep(NA, n_trials)
   
-  
   RLchoicesB <- rep(NA, n_trials)
   
   # Initial Values
@@ -90,7 +89,9 @@ RLR_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=
   temp <- temp %>% 
     mutate(
       cumulativeRateA = cumsum(choicesA) / seq_along(choicesA),
-      cumulativeRateB = cumsum(choicesB) / seq_along(choicesB)
+      cumulativeRateB = cumsum(choicesB) / seq_along(choicesB),
+      cumulativeWinA = cumsum(winA) / seq_along(winA),
+      cumulativeWinB = cumsum(winB) / seq_along(winB),
     )
 }
 
