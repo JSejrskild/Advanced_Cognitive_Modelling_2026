@@ -23,6 +23,8 @@ RLR_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=
   winStreakA <- rep(NA, n_trials)
   lossStreakA <- rep(NA, n_trials)
   losingA <- rep(NA, n_trials)
+  winA <- rep(NA, n_trials)
+  winB <- rep(NA, n_trials)
   
   
   RLchoicesB <- rep(NA, n_trials)
@@ -36,6 +38,9 @@ RLR_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=
   losingA[1] <- FALSE
   ## WSLS
   RLchoicesB[1] <- RandomAgent_f(1, rate = 0.5)
+  # decide on first wins/loss
+  winA[1] <- ifelse(RLchoicesA[1]==RLchoicesB[1], 1, 0)
+  winB[1] <- ifelse(RLchoicesA[1]==RLchoicesB[1], 0, 1)
   
   for (i in 2:n_trials){
     # RLR Agent A picks choice
@@ -43,7 +48,7 @@ RLR_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=
       prevRate = rateA[i-1],
       prevChoice = RLchoicesA[i-1],
       learningRate=learningRate, 
-      feedback = RLchoicesB[i-1], 
+      feedback = winA[i-1], 
       noise = noise,
       kSwitch = kSwitch,
       winStreak = winStreakA[i-1],
@@ -58,14 +63,20 @@ RLR_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5, kSwitch=
     losingA[i] <- outputA$losing
     
     # WSLS Agent B picks Choice
-    outputB <- WSLSAgent_f(prevChoice = RLchoicesB[i-1], feedback = RLchoicesA[i-1], noise = noise)
+    outputB <- WSLSAgent_f(prevChoice = RLchoicesB[i-1], feedback = winB[i-1], noise = noise)
     RLchoicesB[i] <- outputB$choice
+    
+    # decide win/loss
+    winA[i] <- ifelse(RLchoicesA[i]==RLchoicesB[1], 1, 0)
+    winB[i] <- ifelse(RLchoicesA[i]==RLchoicesB[1], 0, 1)
   }
   
   temp <- tibble(
     trial = seq(n_trials), 
     choicesA = RLchoicesA, 
     choicesB = RLchoicesB,
+    winA = winA,
+    winB = winB,
     rateA = rateA,
     winStreakA = winStreakA,
     losingA = losingA,
@@ -149,6 +160,12 @@ resultsPar <- agent_combinations %>%
 
 plan(sequential) # reverse to sequential processing
 
+# compute win/loss
+resultsPar <- resultsPar %>% 
+  mutate(
+    winA = ifelse(choicesA==choicesB, 1, 0)
+  )
+
 # Save results to csv
-filepath <- "data/RL_vs_WSLS.csv"
+filepath <- "data/RLR_vs_WSLS.csv"
 write.csv(resultsPar, filepath)
