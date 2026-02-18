@@ -1,128 +1,147 @@
-
 print(getwd())
-setwd("../1_matching_pennies")
+#setwd("../1_matching_pennies")
+setwd("../")
 print(getwd())
 print(list.files("."))
+# imports
+pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future")
 # import internal
 source("src/agents.R")
-#import packages
-pacman::p_load('tidyverse','purrr','parallel','furrr','future','dplyr')
 # Detect cores
 cores <- detectCores() # detect how many cpu cores
 print(paste0("All CPU Cores: ", cores))
-nWorkers <- cores - 2 # free two of them
+#nWorkers <- cores - 2 # free two of them
+nWorkers <- 30 # free two of them
 # Set seed
-set.seed(2001)
+set.seed(271)
 
 n_trials <- 120
 n_agents <- 100
 
-# build function
-
-RL_vs_WSLS <- function(n_trials, learningRate, noise){
-  
-  self_choice <- rep(NA, n_trials)
-  self_rate <- rep(NA, n_trials)
-  other <- rep(NA, n_trials)
-  win <- rep(NA, n_trials)
+# Build RL vs WSLS
+RL_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5) {
+  RLchoicesA <- rep(NA, n_trials)
+  rateA <- rep(NA, n_trials)
+  winA <- rep(NA, n_trials)
+  winB <- rep(NA, n_trials)
   
   
-  self_rate[1] <- 0.5
-  self_choice[1] <- rbinom(1, 1, self_rate[1])
-  other[1] <- rbinom(1, 1, 0.5)
+  RLchoicesB <- rep(NA, n_trials)
+  
+  # Initial Values
+  ## RL
+  rateA[1] <- initRateA
+  RLchoicesA[1] <- RandomAgent_f(1, rate = rateA[1])
+  ## WSLS
+  RLchoicesB[1] <- RandomAgent_f(1, rate = 0.5)
+  # decide on first wins/loss
+  winA[1] <- ifelse(RLchoicesA[1]==RLchoicesB[1], 1, 0)
+  winB[1] <- ifelse(RLchoicesA[1]==RLchoicesB[1], 0, 1)
   
   for (i in 2:n_trials){
-    # Get feedback for other (WSLS) win or lose
-    if (other[i-1] == self_choice[i-1]){
-      feedback = 0}
-    else {feedback = 1}
+    # RL Agent A picks choice
+    outputA <- RLAgent_f(
+      prevRate = rateA[i-1],
+      learningRate=learningRate, 
+      feedback = winA[i-1], 
+      noise = noise
+    )
     
-    # Update choice for WSLS
-    other[i] <- WSLSAgent_f(prevChoice = other[i-1], feedback = feedback, noise = noise)
+    RLchoicesA[i] <- outputA$choice
+    rateA[i] <- outputA$currentRate
+  
     
-    # Update choice and rate for RL
-    choicenrate <- RLAgent_f(prevrate = self_rate[i-1], feedback = other[i-1], learningRate = learningRate, noise = noise)
+    # WSLS Agent B picks Choice
+    outputB <- WSLSAgent_f(prevChoice = RLchoicesB[i-1], feedback = winB[i-1], noise = noise)
+    RLchoicesB[i] <- outputB$choice
     
-    self_choice[i] <- choicenrate$choice
-    self_rate[i] <- choicenrate$rate
-    
-    # Save wins for RL agent
-    win[i-1] <- 1-feedback
+    # decide win/loss
+    winA[i] <- ifelse(RLchoicesA[i]==RLchoicesB[i], 1, 0)
+    winB[i] <- ifelse(RLchoicesA[i]==RLchoicesB[i], 0, 1)
   }
   
-  # Save varialbes in tibble
-  df <- tibble(self_choice, self_rate, other, trial = seq(n_trials), win)
-  
-  return(df)
-}
-
-# from chatten
-
-# set future plan 
-
-future::plan(future::multisession, workers = nWorkers)
-
-simulate_RL_WSLS_parallel <- function(n_agents, n_trials){
-  
-  # Build testing grid
-  grid <- tidyr::crossing(
-    learningRate = seq(0, 1, 0.1),
-    noise        = seq(0, 1, 0.1),
-    agent        = seq_len(n_agents)
+  temp <- tibble(
+    trial = seq(n_trials), 
+    choicesA = RLchoicesA, 
+    choicesB = RLchoicesB,
+    winA = winA,
+    winB = winB,
+    rateA = rateA,
+    learningRate = learningRate, 
+    noise = noise,
+    initRateA = initRateA
   )
   
-  out <- furrr::future_pmap_dfr(
-    grid,
-    function(learningRate, noise, agent){
-      
-      temp <- RL_vs_WSLS(
-        n_trials      = n_trials,
-        learningRate  = learningRate,
-        noise         = noise
-      )
-      
-      dplyr::mutate(
-        temp,
-        agent = agent,
-        learningRate = learningRate,
-        noise = noise
-      )
-    },
-    .options = furrr::furrr_options(seed = TRUE)
+  temp <- temp %>% 
+    mutate(
+      cumulativeRateA = cumsum(choicesA) / seq_along(choicesA),
+      cumulativeRateB = cumsum(choicesB) / seq_along(choicesB), 
+      cumulativeWinA = cumsum(winA) / seq_along(winA),
+      cumulativeWinB = cumsum(winB) / seq_along(winB)
+    )
+}
+
+# Run and return data for N Trials
+result <- RL_vs_WSLS(
+  n_trials = n_trials, 
+  learningRate = 0.1, 
+  noise = 0,
+  initRateA = 0.5
+)
+
+# ------------------------------------
+# - Loop over parameter combinations -
+# ------------------------------------
+learningRateList <- seq(from = 0, to = 1, by = 0.1)
+noiseList <- seq(from = 0, to = 1, by = 0.1)
+
+combinations <- expand.grid(
+  learningRate = learningRateList, 
+  noise = noiseList
+)
+
+results <- combinations %>% 
+  pmap_dfr(~ RL_vs_WSLS(
+    n_trials = n_trials,
+    learningRate = ..1,
+    noise = ..2,
+    initRateA = 0.5
+  ))
+
+#-----------------------------------
+#- Run 100 agent pairs in parallel -
+#-----------------------------------
+
+plan(multisession, workers = nWorkers) # prepare parrallel processing
+
+# Create a data frame with all combinations and agent IDs
+agent_combinations <- combinations %>%
+  slice(rep(row_number(), each = n_agents)) %>%
+  mutate(agent_id = rep(1:n_agents, nrow(combinations)))
+
+simulate_agent_pair <- function(learningRate, noise, agent_id) {
+  RL_vs_WSLS(
+    n_trials = n_trials,
+    learningRate = learningRate,
+    noise = noise,
+    initRateA = 0.5
+  ) %>%
+    mutate(agent_id = agent_id)
+}
+
+resultsPar <- agent_combinations %>%
+  future_pmap_dfr(
+    ~ simulate_agent_pair(
+      learningRate = ..1,
+      noise = ..2,
+      agent_id = ..3
+    ),
+    .options = furrr_options(seed = TRUE)
   )
-  
-  return(out)
-}
 
-#my own code, not parallel
+plan(sequential) # reverse to sequential processing
 
-simulate_RL_WSLS <- function(n_agents, n_trials){
-  
-  results <- list()
-  counter <- 1
-  
-  for (learningRate in seq(0, 1, 0.1)){
-    for (noise in seq(0, 1, 0.1)){
-      
-      for (agent in 1:n_agents){
-        
-        temp <- RL_vs_WSLS(
-          n_trials = n_trials,
-          learningRate = learningRate,
-          noise = noise
-        )
-        
-        # Save agent data
-        temp$agent <- agent
-        temp$learningRate <- learningRate
-        temp$noise <- noise
-        
-        results[[counter]] <- temp
-        counter <- counter + 1
-      }
-    }
-  }
-  
-  # Combine all runs into one dataframe
-  dplyr::bind_rows(results)
-}
+
+# Save results to csv
+filepath <- "data/RL_vs_WSLS.csv"
+write.csv(resultsPar, filepath)
