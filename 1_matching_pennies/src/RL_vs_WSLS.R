@@ -1,6 +1,9 @@
+# set working dir
 print(getwd())
-#setwd("../1_matching_pennies")
-setwd("../")
+target_dir <- "../1_matching_pennies"
+if (basename(getwd()) != "1_matching_pennies") {
+  setwd(target_dir)
+}
 print(getwd())
 print(list.files("."))
 # imports
@@ -10,8 +13,7 @@ source("src/agents.R")
 # Detect cores
 cores <- detectCores() # detect how many cpu cores
 print(paste0("All CPU Cores: ", cores))
-#nWorkers <- cores - 2 # free two of them
-nWorkers <- 30 # free two of them
+nWorkers <- cores - 2 # free two of them
 # Set seed
 set.seed(271)
 
