@@ -1,6 +1,9 @@
+# set working dir
 print(getwd())
-#setwd("../1_matching_pennies")
-setwd("../")
+target_dir <- "../Advanced_Cognitive_Modelling_2026/1_matching_pennies"
+if (basename(getwd()) != "1_matching_pennies") {
+  setwd(target_dir)
+}
 print(getwd())
 print(list.files("."))
 # imports
