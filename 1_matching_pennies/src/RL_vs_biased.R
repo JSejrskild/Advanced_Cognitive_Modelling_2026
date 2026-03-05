@@ -21,9 +21,10 @@ n_trials <- 120
 n_agents <- 100
 
 # Build RL vs WSLS
-RL_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5) {
+RL_vs_Biased <- function(n_trials, learningRate, noise=0, initRateA=0.5) {
   RLchoicesA <- rep(NA, n_trials)
   rateA <- rep(NA, n_trials)
+  rateB <- rep(NA, n_trials)
   winA <- rep(NA, n_trials)
   winB <- rep(NA, n_trials)
   
@@ -40,6 +41,9 @@ RL_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5) {
   winA[1] <- ifelse(RLchoicesA[1]==RLchoicesB[1], 1, 0)
   winB[1] <- ifelse(RLchoicesA[1]==RLchoicesB[1], 0, 1)
   
+  # set fixed rate B
+  fixedrateB <- 0.8
+  
   for (i in 2:n_trials){
     # RL Agent A picks choice
     outputA <- RLAgent_f(
@@ -51,11 +55,12 @@ RL_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5) {
     
     RLchoicesA[i] <- outputA$choice
     rateA[i] <- outputA$currentRate
-  
+    
     
     # WSLS Agent B picks Choice
-    outputB <- WSLSAgent_f(prevChoice = RLchoicesB[i-1], feedback = winB[i-1], noise = 0)
-    RLchoicesB[i] <- outputB$choice
+    choice <- RandomAgent_f(1, rate=fixedrateB, noise=0, returnList = FALSE)
+    RLchoicesB[i] <- choice
+    rateB[i] <- fixedrateB
     
     # decide win/loss
     winA[i] <- ifelse(RLchoicesA[i]==RLchoicesB[i], 1, 0)
@@ -84,7 +89,7 @@ RL_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5) {
 }
 
 # Run and return data for N Trials
-result <- RL_vs_WSLS(
+result <- RL_vs_Biased(
   n_trials = n_trials, 
   learningRate = 0.1, 
   noise = 0,
@@ -103,7 +108,7 @@ combinations <- expand.grid(
 )
 
 results <- combinations %>% 
-  pmap_dfr(~ RL_vs_WSLS(
+  pmap_dfr(~ RL_vs_Biased(
     n_trials = n_trials,
     learningRate = ..1,
     noise = ..2,
@@ -122,7 +127,7 @@ agent_combinations <- combinations %>%
   mutate(agent_id = rep(1:n_agents, nrow(combinations)))
 
 simulate_agent_pair <- function(learningRate, noise, agent_id) {
-  RL_vs_WSLS(
+  RL_vs_Biased(
     n_trials = n_trials,
     learningRate = learningRate,
     noise = noise,
@@ -145,5 +150,5 @@ plan(sequential) # reverse to sequential processing
 
 
 # Save results to csv
-filepath <- "data/RL_vs_WSLS.csv"
+filepath <- "data/RL_vs_biased.csv"
 write.csv(resultsPar, filepath)
