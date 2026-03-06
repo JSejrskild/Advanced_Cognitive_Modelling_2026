@@ -1,9 +1,10 @@
 # set working dir
 print(getwd())
-target_dir <- "../1_matching_pennies"
-if (basename(getwd()) != "1_matching_pennies") {
-  setwd(target_dir)
-}
+setwd('/work/ACM_2026/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models')
+#target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
+#if (basename(getwd()) != "2_matching_pennies_stan_models") {
+#  setwd(target_dir)
+#}
 print(getwd())
 print(list.files("."))
 # imports
@@ -26,8 +27,6 @@ RL_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5) {
   rateA <- rep(NA, n_trials)
   winA <- rep(NA, n_trials)
   winB <- rep(NA, n_trials)
-  
-  
   RLchoicesB <- rep(NA, n_trials)
   
   # Initial Values

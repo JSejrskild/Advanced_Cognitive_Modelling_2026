@@ -1,24 +1,26 @@
 # set working dir
 print(getwd())
-target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
-if (basename(getwd()) != "2_matching_pennies_stan_models") {
-  setwd(target_dir)
-}
+#target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
+setwd('/work/ACM_2026/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models')
+#target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
+#if (basename(getwd()) != "2_matching_pennies_stan_models") {
+#  setwd(target_dir)
+#}
 print(getwd())
 print(list.files("."))
 # imports
 pacman::p_load("tidyverse", "cmdstanr", "here")
 
-fpath <- "data/RL_vs_biased.csv"
+fpath <- "data/RL_vs_WSLS.csv"
 simdata <- read_csv(fpath)
 
 # Maybe choose some specific data or loop across it.
 testdata <- simdata %>% 
-  select(agent_id, trial, choicesA, winA, learningRate, noise) %>% 
+  select(agent_id, trial, choicesA, winA, learningRate, noise, choicesB) %>% 
   filter(learningRate == 0.5, noise == 0)
 
 inspect_data <- simdata %>% 
-  select(agent_id, trial, choicesA, winA, learningRate, noise, winB, ) %>% 
+  select(agent_id, trial, choicesA, winA, learningRate, noise, winB) %>% 
   filter(learningRate == 0.5, noise == 0)
 
 initialV <- 0.5
@@ -27,11 +29,13 @@ initialV <- 0.5
 sdata <- list(
   t = length(testdata$choicesA),
   choice = testdata$choicesA,
-  feedback = testdata$winA,
-  initialV = initialV
+  feedback = testdata$choicesB,
+  initialV = initialV,
+  alpha_prior_mu = 0,
+  alpha_prior_sd = 1.5
 )
 
-rlmodelpath <- here("2_matching_pennies_stan_models", "src", "RL_model.stan")
+rlmodelpath <- here("ACM_2026/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models", "src", "RL_model.stan")
 print(rlmodelpath)
 outputdir <- "output"
 model_file <- here(outputdir, "RL_fit.rds")
@@ -50,7 +54,8 @@ fit_rl <- rlmodel$sample( # set configuations
 
 # Save the fitted model object
 #fit_rl$save_object(file= model_file)
-fit_rl$summary()
+print(fit_rl$summary())
+print(plogis(as.numeric(fit_rl$summary("alpha")['mean'])))
 
 
 
