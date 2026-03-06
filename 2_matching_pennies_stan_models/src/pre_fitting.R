@@ -4,6 +4,7 @@ target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_20
 if (basename(getwd()) != "2_matching_pennies_stan_models") {
   setwd(target_dir)
 }
+setwd(target_dir)
 print(getwd())
 print(list.files("."))
 # imports
@@ -31,7 +32,7 @@ sdata <- list(
   initialV = initialV
 )
 
-rlmodelpath <- here("2_matching_pennies_stan_models", "src", "RL_model.stan")
+rlmodelpath <- "src/RL_model.stan"
 print(rlmodelpath)
 outputdir <- "output"
 model_file <- here(outputdir, "RL_fit.rds")
