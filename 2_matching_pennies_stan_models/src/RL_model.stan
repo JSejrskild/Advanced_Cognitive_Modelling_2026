@@ -23,7 +23,7 @@ model{
   for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
     V[i] = V[i-1] + inv_logit(alpha_logit) * (feedback[i-1] - V[i-1]);
     target += binomial_lpmf(choice[i] | 1, V[i]);
-  }  
+  }
 }
 
 generated quantities {
@@ -41,7 +41,7 @@ generated quantities {
   // Draw a prior predictive sample
   alpha_prior = inv_logit(normal_rng(alpha_prior_mu, alpha_prior_sd));
   // Transform posterior
-  alpha = inv_logit(alpha_logit)
+  alpha = inv_logit(alpha_logit);
   
   // Prior Predictive 
   for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
@@ -51,8 +51,8 @@ generated quantities {
   
   // Posterior predictive
   for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
-    V_post[i] = V_post[i-1] + alpha * (feedback[i-1] - V_post[i-1]);
-    choice_post_pred[i] = bernoulli_rng(V_post[i]);
+    V_posterior[i] = V_posterior[i-1] + alpha * (feedback[i-1] - V_posterior[i-1]);
+    choice_post_pred[i] = bernoulli_rng(V_posterior[i]);
   }
   
   // 
