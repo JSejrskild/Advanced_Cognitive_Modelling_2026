@@ -54,5 +54,3 @@ fit_rl <- rlmodel$sample( # set configuations
 # Save the fitted model object
 #fit_rl$save_object(file= model_file)
 fit_rl$summary("alpha")
-
-draws <- fit_rl$draws()

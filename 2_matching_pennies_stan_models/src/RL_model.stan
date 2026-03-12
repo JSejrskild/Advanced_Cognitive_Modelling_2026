@@ -29,34 +29,32 @@ model{
 generated quantities {
   //Prior
   real<lower = 0, upper = 1> alpha_prior;
-  array[t] real V_prior; // V (temporary) for prior
-  V_prior[1] = initialV; // Set the first belief to the hardcoded initialV
   array[t] int choice_prior_pred;
   //Posterior
   real<lower = 0, upper = 1> alpha;
-  array[t] real V_posterior; // V (temporary) for posterior
-  V_posterior[1] = initialV; // Set the first belief to the hardcoded initialV
   array[t] int choice_post_pred;
+  // temporary rate
+  real V_tmp;
   
-  // Draw a prior predictive sample
+  // Draw a prior (predictive) sample
   alpha_prior = inv_logit(normal_rng(alpha_prior_mu, alpha_prior_sd));
   // Transform posterior
   alpha = inv_logit(alpha_logit);
   
   // Prior Predictive 
+  V_tmp = initialV;
   for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
-    V_prior[i] = V_prior[i-1] + alpha_prior * (feedback[i-1] - V_prior[i-1]);
-    choice_prior_pred[i] = bernoulli_rng(V_prior[i]);
+    V_tmp = V_tmp + alpha_prior * (feedback[i-1] - V_tmp);
+    choice_prior_pred[i] = bernoulli_rng(V_tmp);
   }
   
   // Posterior predictive
+  V_tmp = initialV;
   for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
-    V_posterior[i] = V_posterior[i-1] + alpha * (feedback[i-1] - V_posterior[i-1]);
-    choice_post_pred[i] = bernoulli_rng(V_posterior[i]);
+    V_tmp = V_tmp + alpha * (feedback[i-1] - V_tmp);
+    choice_post_pred[i] = bernoulli_rng(V_tmp);
   }
-  
-  // deletet unnecessary parameters
-  
+
 } 
 
 
