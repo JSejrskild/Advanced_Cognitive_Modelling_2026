@@ -31,12 +31,12 @@ generated quantities {
   real<lower = 0, upper = 1> alpha_prior;
   array[t] real V_prior; // V (temporary) for prior
   V_prior[1] = initialV; // Set the first belief to the hardcoded initialV
-  array[t] real choice_prior_pred;
+  array[t] int choice_prior_pred;
   //Posterior
   real<lower = 0, upper = 1> alpha;
   array[t] real V_posterior; // V (temporary) for posterior
   V_posterior[1] = initialV; // Set the first belief to the hardcoded initialV
-  array[t] real choice_post_pred;
+  array[t] int choice_post_pred;
   
   // Draw a prior predictive sample
   alpha_prior = inv_logit(normal_rng(alpha_prior_mu, alpha_prior_sd));
@@ -55,7 +55,7 @@ generated quantities {
     choice_post_pred[i] = bernoulli_rng(V_posterior[i]);
   }
   
-  // 
+  // deletet unnecessary parameters
   
 } 
 

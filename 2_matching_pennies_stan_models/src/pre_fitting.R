@@ -15,12 +15,12 @@ simdata <- read_csv(fpath)
 
 # Maybe choose some specific data or loop across it.
 testdata <- simdata %>% 
-  select(agent_id, trial, choicesA, winB, learningRate, noise) %>% 
-  filter(learningRate == 0.5, noise == 0)
+  select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
+  filter(learningRate == 0.6, noise == 0)
 
 inspect_data <- simdata %>% 
-  select(agent_id, trial, choicesA, winB, learningRate, noise, winB, ) %>% 
-  filter(learningRate == 0.5, noise == 0)
+  select(agent_id, trial, choicesA, choicesB, learningRate, noise, winB, ) %>% 
+  filter(learningRate == 0.6, noise == 0)
 
 initialV <- 0.5
 
@@ -28,7 +28,7 @@ initialV <- 0.5
 sdata <- list(
   t = length(testdata$choicesA),
   choice = testdata$choicesA,
-  feedback = testdata$winB,
+  feedback = testdata$choicesB,
   initialV = initialV,
   alpha_prior_mu = 0,
   alpha_prior_sd = 1.5
@@ -53,7 +53,6 @@ fit_rl <- rlmodel$sample( # set configuations
 
 # Save the fitted model object
 #fit_rl$save_object(file= model_file)
-fit_rl$summary()
+fit_rl$summary("alpha")
 
-
-
+draws <- fit_rl$draws()
