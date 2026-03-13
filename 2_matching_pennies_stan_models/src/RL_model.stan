@@ -10,7 +10,7 @@ data{
 
 parameters{
 // All parameters are inferable
-  real<lower = 0, upper = 1> alpha_logit; // We have a learning rate (alpha) that we want to infer
+  real alpha_logit; // We have a learning rate (alpha) that we want to infer
 }
 
 model{
@@ -43,6 +43,7 @@ generated quantities {
   
   // Prior Predictive 
   V_tmp = initialV;
+  choice_prior_pred[1] = bernoulli_rng(V_tmp);
   for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
     V_tmp = V_tmp + alpha_prior * (feedback[i-1] - V_tmp);
     choice_prior_pred[i] = bernoulli_rng(V_tmp);
@@ -50,6 +51,7 @@ generated quantities {
   
   // Posterior predictive
   V_tmp = initialV;
+  choice_post_pred[1] = bernoulli_rng(V_tmp);
   for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
     V_tmp = V_tmp + alpha * (feedback[i-1] - V_tmp);
     choice_post_pred[i] = bernoulli_rng(V_tmp);
