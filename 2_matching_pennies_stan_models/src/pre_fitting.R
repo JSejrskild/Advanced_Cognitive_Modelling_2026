@@ -1,6 +1,6 @@
 # set working dir
 print(getwd())
-target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
+target_dir <- "C:/Users/anelo/OneDrive/Documents/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
 if (basename(getwd()) != "2_matching_pennies_stan_models") {
   setwd(target_dir)
 }
@@ -15,11 +15,11 @@ simdata <- read_csv(fpath)
 
 # Maybe choose some specific data or loop across it.
 testdata <- simdata %>% 
-  select(agent_id, trial, choicesA, winA, learningRate, noise) %>% 
+  select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
   filter(learningRate == 0.5, noise == 0)
 
 inspect_data <- simdata %>% 
-  select(agent_id, trial, choicesA, winA, learningRate, noise, winB, ) %>% 
+  select(agent_id, trial, choicesA, winB, learningRate, noise, winB, ) %>% 
   filter(learningRate == 0.5, noise == 0)
 
 initialV <- 0.5
@@ -28,8 +28,10 @@ initialV <- 0.5
 sdata <- list(
   t = length(testdata$choicesA),
   choice = testdata$choicesA,
-  feedback = testdata$winA,
-  initialV = initialV
+  feedback = testdata$choicesB,
+  initialV = initialV,
+  alpha_prior_mu = 0,
+  alpha_prior_sd = 1.5
 )
 
 rlmodelpath <- "src/RL_model.stan"
@@ -51,7 +53,7 @@ fit_rl <- rlmodel$sample( # set configuations
 
 # Save the fitted model object
 #fit_rl$save_object(file= model_file)
-fit_rl$summary()
-
+#fit_rl$summary()
+fit_rl$draws("alpha")|> posterior::summarise_draws()
 
 
