@@ -17,18 +17,40 @@ simdata <- read_csv(fpath)
 outputdir <- paste0(workdir,"/output")
 model_file <- paste0(outputdir, "/rlmodel_fit.rds")
 
-RUN_MODEL_FIT = TRUE # if false we read in previously saved model file
-
-if (RUN_MODEL_FIT){
   # === SET INPUT DATA ===
-  # Maybe choose some specific data or loop across it.
+  # Maybe choose some specific data or loop across it
+
+rlmodel <- cmdstan_model(rlmodelpath) # create the stan model object
+
+inspect <- simdata %>% 
+  select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
+  filter(agent_id == 23, learningRate == .3, noise == 0)
+
+LRs <- seq(0,1,by=0.1)
+agents <- seq(0,100)
+one_agent_id <- 23
+param_recov_result <- tibble()
+
+results <- list()
+
+for (i in LRs){
+  print(paste("Learning Rate: ", i))
   testdata <- simdata %>% 
-    select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
-    filter(agent_id ==5, learningRate == 0.2, noise == 0)
+      select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
+      filter(agent_id == one_agent_id, learningRate == i, noise == 0)
+  
+  if (nrow(testdata) == 0) {
+    print(paste("No data for learning rate", i))
+    next
+  }
+  if (nrow(testdata) != 120) {
+    print(paste("Wrong number of trials for LR", i, ":", nrow(testdata)))
+    next
+  }
   
   initialV <- 0.5
   
-  # setup stan data structure
+    # setup stan data structure
   sdata <- list(
     t = 120,
     choice = testdata$choicesA,
@@ -41,8 +63,6 @@ if (RUN_MODEL_FIT){
   # === FIT MODEL ===
   rlmodelpath <- "src/RL_model.stan"
   print(rlmodelpath)
-  
-  rlmodel <- cmdstan_model(rlmodelpath) # create the stan model object
   
   fit_rl <- rlmodel$sample( # set configuations
     data=sdata,
@@ -58,21 +78,41 @@ if (RUN_MODEL_FIT){
   
   fit_rl$summary("alpha") # check alpha posterior
   
-  # === SAVE FIT ===
+  draws <- as_draws_df(fit_rl$draws())
+  alpha_prior <- draws$alpha_prior
+  alpha_post <- draws$alpha
   
-  # Save the fitted model object
-  print(paste0("Saving model fit to: ", model_file))
-  if (!dir.exists(dirname(model_file))) {
-    dir.create(dirname(model_file), recursive = TRUE)
-  }
-  fit_rl$save_object(file=model_file)
-  print("Saved model fit!")
-} else {
-  # === LOAD SAVED FIT ===
-  fit_rl <- readRDS(model_file)
+  results[[as.character(i)]] <- tibble(
+    learning_rate = i,
+    alpha_prior = alpha_prior,
+    alpha_post = alpha_post
+  )
+  
 }
+# TODO: The loop says there is no data available for learning rates:
+# 0.3, 0.6, 0.7
+# final result is only of length 64000
+
+final_results <- bind_rows(results)
 
 # --------------------------------------------
+
+# Plot our prior-posterior predictive
+title = paste("Prior-Posterior (Alpha, learning rate = ", i, " )")
+plot <- ggplot(draws) +
+  geom_density(aes(alpha, fill = "Posterior"), alpha = 0.6) +
+  geom_density(aes(alpha_prior, fill = "Prior"), alpha = 0.6) +
+  geom_vline(xintercept = i, linetype = "dashed", color = "black", linewidth = 1.2) +
+  scale_fill_manual(values = c("Posterior" = "blue", "Prior" = "red")) +
+  labs(
+    title = title,
+    x = "Alpha (Learning rate)",
+    y = "Density",
+    fill = "Distribution"
+  ) +
+  theme_classic()
+
+plots[[i]] <- plot
 
 # === MCMC DIAGNOSITCS ===
 diagnostics <- function(fit_object){
