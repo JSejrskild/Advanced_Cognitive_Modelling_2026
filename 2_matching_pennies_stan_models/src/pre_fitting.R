@@ -115,6 +115,12 @@ fit_rl$summary("alpha") # check alpha posterior
 
 # === Validation PLOTS ===
 
+fit_rl$summary()
+
+ggplot(draws, aes(.iteration, alpha, group = .chain, color = .chain)) +
+  geom_line() +
+  theme_classic()
+
 # Plot our prior-posterior predictive
 ggplot(draws) +
   geom_density(aes(alpha, fill = "Posterior"), alpha = 0.6) +
@@ -129,6 +135,5 @@ ggplot(draws) +
   ) +
   theme_classic()
   
-# Plot Posterior Predictive
-ggplot(draws) +
-  geom_point(aes(x=))
+# Plot Posterior Predictive choices against true choices
+t <- seq(1,120)
