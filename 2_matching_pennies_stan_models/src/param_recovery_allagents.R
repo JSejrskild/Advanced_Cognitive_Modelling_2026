@@ -17,99 +17,105 @@ simdata <- read_csv(fpath)
 outputdir <- paste0(workdir,"/output")
 model_file <- paste0(outputdir, "/rlmodel_fit.rds")
 
-  # === SET INPUT DATA ===
-  # Maybe choose some specific data or loop across it
-
+rlmodelpath <- "src/RL_model.stan"
+print(rlmodelpath)
 rlmodel <- cmdstan_model(rlmodelpath) # create the stan model object
 
-inspect <- simdata %>% 
-  select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
-  filter(agent_id == 23, learningRate == 0.7, noise == 0)
-
 LRs <- round(seq(0.1, 1, by = 0.1), digits = 1)
-agents <- seq(0,100)
+agent_ids <- round(seq(1, 100, by = 1), digits = 0)
 ntrials <- 120
 param_recov_result <- tibble()
 class(LRs)
 class(one_agent_id)
 
-aresults <- list()
+all_results <- list()
 trace_plots <- list()
 bad_count <- 0
   
 # RECOVERY LOOP
-
 for (i in LRs){
   print(paste("============== Learning Rate: ", i, "=============="))
-  testdata <- simdata %>% 
-      select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
-      filter(learningRate == i, noise == 0)
-  
-  if (nrow(testdata) == 0) {
-    print(paste("No data for learning rate", i))
-    bad_count = bad_count + 1
-    next
+  for (agent in agent_ids) {
+    print(paste("=== Agent ID: ", agent))
+    testdata <- simdata %>% 
+        select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
+        filter(agent_id==agent, learningRate == i, noise == 0)
+    
+    if (nrow(testdata) == 0) {
+      print(paste("No data for learning rate", i))
+      bad_count = bad_count + 1
+      next
+    }
+    if (nrow(testdata) != ntrials* length(unique(testdata$agent_id))) {
+      print(paste("Wrong number of trials for LR", i, ":", nrow(testdata)))
+      bad_count = bad_count + 1
+      next
+    }
+    
+    initialV <- 0.5
+    
+      # setup stan data structure
+    sdata <- list(
+      t = ntrials,
+      choice = testdata$choicesA,
+      feedback = testdata$choicesB,
+      initialV = initialV,
+      alpha_prior_mu = 0,
+      alpha_prior_sd = 1.5
+    )
+    
+    # === FIT MODEL ===
+    fit_rl <- rlmodel$sample( # set configuations
+      data=sdata,
+      seed=231,
+      chains= 4,
+      parallel_chains = 4,
+      iter_warmup = 1000,
+      iter_sampling = 2000,
+      refresh = 500
+    )
+    
+    # === INSPECT FIT ===
+    
+    fit_rl$summary("alpha") # check alpha posterior
+    
+    draws <- as_draws_df(fit_rl$draws())
+    alpha_prior <- draws$alpha_prior
+    alpha_post <- draws$alpha
+    mean_alpha_prior <- mean(alpha_prior)
+    mean_alpha_post <- mean(alpha_post)
+    
+    # create a combined dataframe with prior-posterior for each learning rate
+    agent_results <- tibble(
+      learning_rate = i,
+      agent_id = agent,
+      alpha_prior = alpha_prior,
+      alpha_post = alpha_post
+    )
+    
+    # Append to the global results dataframe
+    all_results <- bind_rows(all_results, agent_results)
+    
+    # create some MCMC trace plots
+    trace_plot <- ggplot(draws, aes(.iteration, alpha, group = .chain, color = .chain)) +
+      geom_line() +
+      labs(title = paste("α = ", i)) +
+      theme_classic() + 
+      scale_color_gradient(low = "purple", high= "orange")
+    
+    trace_plots[[as.character(i)]] <- trace_plot
+    
   }
-  if (nrow(testdata) != ntrials* length(unique(testdata$agent_id))) {
-    print(paste("Wrong number of trials for LR", i, ":", nrow(testdata)))
-    bad_count = bad_count + 1
-    next
-  }
-  
-  initialV <- 0.5
-  
-    # setup stan data structure
-  sdata <- list(
-    t = ntrials,
-    choice = testdata$choicesA,
-    feedback = testdata$choicesB,
-    initialV = initialV,
-    alpha_prior_mu = 0,
-    alpha_prior_sd = 1.5
-  )
-  
-  # === FIT MODEL ===
-  rlmodelpath <- "src/RL_model.stan"
-  print(rlmodelpath)
-  
-  fit_rl <- rlmodel$sample( # set configuations
-    data=sdata,
-    seed=231,
-    chains= 4,
-    parallel_chains = 4,
-    iter_warmup = 1000,
-    iter_sampling = 2000,
-    refresh = 500
-  )
-  
-  # === INSPECT FIT ===
-  
-  fit_rl$summary("alpha") # check alpha posterior
-  
-  draws <- as_draws_df(fit_rl$draws())
-  alpha_prior <- draws$alpha_prior
-  alpha_post <- draws$alpha
-  
-  # create a combined dataframe with prior-posterior for each learning rate
-  results[[as.character(i)]] <- tibble(
-    learning_rate = i,
-    alpha_prior = alpha_prior,
-    alpha_post = alpha_post
-  )
-  
-  # create some MCMC trace plots
-  trace_plot <- ggplot(draws, aes(.iteration, alpha, group = .chain, color = .chain)) +
-    geom_line() +
-    labs(title = paste("α = ", i)) +
-    theme_classic() + 
-    scale_color_gradient(low = "purple", high= "orange")
-  
-  trace_plots[[as.character(i)]] <- trace_plot
-  
 }
 print(paste0("There were ", bad_count, " bad paramrecovery runs."))
 
-final_results <- bind_rows(results)
+posterior_means <- all_results %>%
+  group_by(learning_rate, agent_id) %>%
+  summarize(
+    mean_alpha_prior = mean(alpha_prior),
+    mean_alpha_post = mean(alpha_post),
+    .groups = "drop"
+  )
 
 # --------------------------------------------
 
@@ -167,12 +173,12 @@ ggsave(
 # === Validation PLOTS ===
 
 # Plot one prior-posterior:
-pick <- final_results %>% 
+pick <- all_results %>% 
   filter(learning_rate == 0.3)
 ggplot(pick) +
   geom_density(aes(alpha_post, fill = "Posterior"), alpha = 0.6) +
   geom_density(aes(alpha_prior, fill = "Prior"), alpha = 0.6) +
-  geom_vline(xintercept = 0.6, linetype = "dashed", color = "black", linewidth = 1.2) +
+  geom_vline(xintercept = 0.3, linetype = "dashed", color = "black", linewidth = 1.2) +
   scale_fill_manual(values = c("Posterior" = "blue", "Prior" = "red")) +
   labs(
     title = "Prior-Posterior (Alpha, learning rate)",

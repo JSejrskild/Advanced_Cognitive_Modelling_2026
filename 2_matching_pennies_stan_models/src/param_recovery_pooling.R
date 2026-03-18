@@ -10,32 +10,31 @@ print(list.files("."))
 workdir <- getwd()
 # imports
 pacman::p_load("tidyverse", "cmdstanr", "here", "posterior", "bayesplot", "patchwork")
+source("src/utils.R") #load custom functions
 
 fpath <- "data/RL_vs_biased.csv"
 simdata <- read_csv(fpath)
 
 outputdir <- paste0(workdir,"/output")
-model_file <- paste0(outputdir, "/rlmodel_fit.rds")
+model_file <- paste0(outputdir, "/rlmodel_pool_fit.rds")
 
-  # === SET INPUT DATA ===
-  # Maybe choose some specific data or loop across it
+rlmodelpath <- "src/RL_model_pooling.stan"
+print(rlmodelpath)
+
+# === SET INPUT DATA ===
+# Maybe choose some specific data or loop across it
 
 rlmodel <- cmdstan_model(rlmodelpath) # create the stan model object
 
-inspect <- simdata %>% 
-  select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
-  filter(agent_id == 23, learningRate == 0.7, noise == 0)
-
 LRs <- round(seq(0.1, 1, by = 0.1), digits = 1)
 agents <- seq(0,100)
-ntrials <- 120
 param_recov_result <- tibble()
 class(LRs)
-class(one_agent_id)
 
-aresults <- list()
+results <- list()
 trace_plots <- list()
 bad_count <- 0
+n_trials <- 120
   
 # RECOVERY LOOP
 
@@ -50,27 +49,30 @@ for (i in LRs){
     bad_count = bad_count + 1
     next
   }
-  if (nrow(testdata) != ntrials* length(unique(testdata$agent_id))) {
+  if (nrow(testdata) != n_trials* length(unique(testdata$agent_id))) {
     print(paste("Wrong number of trials for LR", i, ":", nrow(testdata)))
     bad_count = bad_count + 1
     next
   }
   
   initialV <- 0.5
+  n_subj <- length(unique(testdata$agent_id))
+  # setup subject/trial matrices
+  choice_mat <- matrix(testdata$choicesA, nrow = n_subj, ncol = n_trials, byrow = TRUE)
+  feedback_mat <- matrix(testdata$choicesB, nrow = n_subj, ncol = n_trials, byrow = TRUE)
   
-    # setup stan data structure
+  # setup stan data structure
   sdata <- list(
-    t = ntrials,
-    choice = testdata$choicesA,
-    feedback = testdata$choicesB,
+    n_subjects = n_subj,
+    t = n_trials,
+    choice = choice_mat,
+    feedback = feedback_mat,
     initialV = initialV,
     alpha_prior_mu = 0,
     alpha_prior_sd = 1.5
   )
   
   # === FIT MODEL ===
-  rlmodelpath <- "src/RL_model.stan"
-  print(rlmodelpath)
   
   fit_rl <- rlmodel$sample( # set configuations
     data=sdata,
@@ -86,15 +88,13 @@ for (i in LRs){
   
   fit_rl$summary("alpha") # check alpha posterior
   
-  draws <- as_draws_df(fit_rl$draws())
-  alpha_prior <- draws$alpha_prior
-  alpha_post <- draws$alpha
+  draws <- as_draws_df(fit_rl$draws(variables = c("alpha", "alpha_prior")))
   
   # create a combined dataframe with prior-posterior for each learning rate
   results[[as.character(i)]] <- tibble(
     learning_rate = i,
-    alpha_prior = alpha_prior,
-    alpha_post = alpha_post
+    alpha_prior = draws$alpha_prior,
+    alpha_post = draws$alpha
   )
   
   # create some MCMC trace plots
@@ -106,6 +106,7 @@ for (i in LRs){
   
   trace_plots[[as.character(i)]] <- trace_plot
   
+  gc() # clear memory
 }
 print(paste0("There were ", bad_count, " bad paramrecovery runs."))
 
@@ -113,41 +114,8 @@ final_results <- bind_rows(results)
 
 # --------------------------------------------
 
-# === MCMC DIAGNOSITCS ===
-diagnostics <- function(fit_object){
-  fit_summary <- fit_object$summary() # check full posterior summary (DOES NOT WORK, too much data?)
-  diagnostic_summary <- fit_object$diagnostic_summary()
-  diagnostic_summary
-  
-  # 1. Check for Divergent Transitions (Zero Tolerance)
-  divergences <- sum(diagnostic_summary$num_divergent)
-  if (divergences > 0) {
-    stop(paste("CRITICAL FAILURE:", divergences, "divergences detected. The posterior geometry is pathological. Reparameterization required. Do not interpret these results."))
-  }
-  
-  # 2. Check E-BFMI (Energy-Bayesian Fraction of Missing Information)
-  # Threshold is typically 0.3. Values below this indicate poor exploration.
-  min_ebfmi <- min(diagnostic_summary$ebfmi)
-  if (min_ebfmi < 0.3) {
-    warning(paste("WARNING: Low E-BFMI detected (Min =", round(min_ebfmi, 3), 
-                  "). The sampler may struggle to explore the tails of the posterior."))
-  }
-  
-  # 3. Check for Convergence (Rhat < 1.01)
-  max_rhat <- max(fit_summary$rhat, na.rm = TRUE)
-  if (max_rhat > 1.01) {
-    stop(paste("CRITICAL FAILURE: Chains did not converge. Max Rhat =", round(max_rhat, 3)))
-  }
-  
-  # 4. Check Effective Sample Size (ESS > 400 for both bulk and tail)
-  min_ess_bulk <- min(fit_summary$ess_bulk, na.rm = TRUE)
-  min_ess_tail <- min(fit_summary$ess_tail, na.rm = TRUE)
-  if (min_ess_bulk < 400 || min_ess_tail < 400) {
-    warning("WARNING: Insufficient Effective Sample Size. Autocorrelation is too high. Run longer chains.")
-  }
-}
-
 diagnostics(fit_rl)
+fit_rl$summary(c("alpha", "alpha_prior"))
 
 # create combined trace plots
 combined_trace_plots <- patchwork::wrap_plots(trace_plots, ncol = 3) 
@@ -159,7 +127,7 @@ print(combined_trace_plots)
 
 # Save it
 ggsave(
-  file.path(workdir, "output", "all_trace_plots.png"), 
+  file.path(workdir, "output", "all_trace_plots_pooling.png"), 
   plot = combined_trace_plots, 
   width = 25, height = 20, units = "cm", dpi = 300
 )
@@ -208,7 +176,7 @@ lr_param_recov_plot1 <- ggplot(plot_data) +
   # it doesn't squash the other plots flat.
   facet_wrap(~learning_rate, scales = "free_y")
 
-plotpath <- file.path(workdir, "output", "lr_param_recov_plot1.png")
+plotpath <- file.path(workdir, "output", "lr_param_recov_plot_pooling.png")
 ggsave(plotpath, plot=lr_param_recov_plot1, 
        width = 20,
        height = 14,
