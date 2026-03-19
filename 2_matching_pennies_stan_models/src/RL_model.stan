@@ -10,7 +10,11 @@ data{
 
 parameters{
 // All parameters are inferable
+<<<<<<< HEAD
   real<lower = 0, upper = 1> alpha_logit; // We have a learning rate (alpha) that we want to infer
+=======
+  real alpha_logit; // We have a learning rate (alpha) that we want to infer
+>>>>>>> 248bf4b7f5777c7d056acbca6daf5a694c0acc9d
 }
 
 model{
@@ -23,12 +27,13 @@ model{
   for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
     V[i] = V[i-1] + inv_logit(alpha_logit) * (feedback[i-1] - V[i-1]);
     target += binomial_lpmf(choice[i] | 1, V[i]);
-  }  
+  }
 }
 
 generated quantities {
   //Prior
   real<lower = 0, upper = 1> alpha_prior;
+<<<<<<< HEAD
   array[t] real V_prior; // V (temporary) for prior
   V_prior[1] = initialV; // Set the first belief to the hardcoded initialV
   array[t] int choice_prior_pred;
@@ -39,11 +44,22 @@ generated quantities {
   array[t] int choice_post_pred;
   
   // Draw a prior predictive sample
+=======
+  array[t] int choice_prior_pred;
+  //Posterior
+  real<lower = 0, upper = 1> alpha;
+  array[t] int choice_post_pred;
+  // temporary rate
+  real V_tmp;
+  
+  // Draw a prior (predictive) sample
+>>>>>>> 248bf4b7f5777c7d056acbca6daf5a694c0acc9d
   alpha_prior = inv_logit(normal_rng(alpha_prior_mu, alpha_prior_sd));
   // Transform posterior
   alpha = inv_logit(alpha_logit);
   
   // Prior Predictive 
+<<<<<<< HEAD
   for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
     V_prior[i] = V_prior[i-1] + alpha_prior * (feedback[i-1] - V_prior[i-1]);
     choice_prior_pred[i] = bernoulli_rng(V_prior[i]);
@@ -56,7 +72,23 @@ generated quantities {
   }
   
   // 
+=======
+  V_tmp = initialV;
+  choice_prior_pred[1] = bernoulli_rng(V_tmp);
+  for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
+    V_tmp = V_tmp + alpha_prior * (feedback[i-1] - V_tmp);
+    choice_prior_pred[i] = bernoulli_rng(V_tmp);
+  }
+>>>>>>> 248bf4b7f5777c7d056acbca6daf5a694c0acc9d
   
+  // Posterior predictive
+  V_tmp = initialV;
+  choice_post_pred[1] = bernoulli_rng(V_tmp);
+  for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
+    V_tmp = V_tmp + alpha * (feedback[i-1] - V_tmp);
+    choice_post_pred[i] = bernoulli_rng(V_tmp);
+  }
+
 } 
 
 
