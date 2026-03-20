@@ -5,3 +5,4 @@
 
 # ignore all data folders
 **/data/
+**/output/

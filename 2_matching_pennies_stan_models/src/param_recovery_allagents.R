@@ -29,6 +29,7 @@ class(LRs)
 class(one_agent_id)
 
 all_results <- list()
+all_agent_preds <- list()
 trace_plots <- list()
 bad_count <- 0
   
@@ -65,7 +66,7 @@ for (i in LRs){
     )
     
     # === FIT MODEL ===
-    fit_rl <- rlmodel$sample( # set configuations
+    fit_rl <- rlmodel$sample( #set configurations
       data=sdata,
       seed=231,
       chains= 4,
@@ -95,6 +96,29 @@ for (i in LRs){
     
     # Append to the global results dataframe
     all_results <- bind_rows(all_results, agent_results)
+    
+    # Create the prior fractions
+    frac_preds <- function(pred_var_name) {
+      pred <- as_draws_matrix(fit_rl$draws(pred_var_name))
+      dim(pred)
+      true <- testdata$choicesA
+      matches <- pred == true
+      matches_numeric <- matches * 1
+      fraction_per_trial <- colSums(matches_numeric) / nrow(matches_numeric)
+      return(fraction_per_trial)
+    }
+    
+    prior_pred_per_trial <- frac_preds("choice_prior_pred")
+    post_pred_per_trial <- frac_preds("choice_post_pred")
+    
+    agent_preds <-  tibble(
+      learning_rate = i,
+      agent_id = agent,
+      prior_pred_per_trial = prior_pred_per_trial,
+      post_pred_per_trial = post_pred_per_trial
+    )
+    
+    all_agent_preds <- bind_rows(all_agent_preds, agent_preds)
     
     # create some MCMC trace plots
     trace_plot <- ggplot(draws, aes(.iteration, alpha, group = .chain, color = .chain)) +
@@ -188,38 +212,32 @@ ggplot(pick) +
   ) +
   theme_classic()
 
-# Plot our prior-posterior predictive
-plot_data <- final_results %>%
-  pivot_longer(
-    cols = c(alpha_post, alpha_prior),
-    names_to = "Distribution",
-    values_to = "alpha_value"
-  ) %>%
-  # Make the names look nice for the legend
-  mutate(Distribution = ifelse(Distribution == "alpha_post", "posterior", "prior"))
+# Plot posterior means against true values
+all_results
 
-lr_param_recov_plot1 <- ggplot(plot_data) +
-  # Now we only need ONE density layer!
-  geom_density(aes(x = alpha_value, fill = Distribution), alpha = 0.6) +
-  geom_vline(aes(xintercept = learning_rate), linetype = "dashed", color = "black", linewidth = 1.2) +
-  scale_fill_manual(values = c("posterior" = "lightblue", "prior" = "orange")) +
+param_recov_allagents <- ggplot(posterior_means, aes(x=learning_rate, y=mean_alpha_post)) +
+  geom_point() + 
+  geom_abline(intercept=0, slope=1, linetype=2) +
+  geom_smooth(method="lm", se=T, formula = "y ~ x") +
   labs(
-    title = "Prior-Posterior (Alpha, learning rate)",
-    x = "Alpha (Learning rate)",
-    y = "Density",
-    fill = "Distribution"
+    title = "Parameter Recovery (Alpha, learning rate)",
+    x = "Alpha (learning rate)",
+    y = "Mean alpha posterior"
   ) +
-  theme_classic() +
-  # Use scales = "free_y" so if one posterior is very narrow and tall, 
-  # it doesn't squash the other plots flat.
-  facet_wrap(~learning_rate, scales = "free_y")
+  theme_classic()
 
-plotpath <- file.path(workdir, "output", "lr_param_recov_plot1.png")
-ggsave(plotpath, plot=lr_param_recov_plot1, 
-       width = 20,
-       height = 14,
-       units = "cm",
-       dpi=300
-       )
+ggsave(
+  file.path(workdir, "output", "parameter_recovery_allagents.png"), 
+  plot = param_recov_allagents, 
+  width = 25, height = 20, units = "cm", dpi = 300
+)
+
+# Prior-Predictive
+sum(is.na(all_agent_preds))
+all_agent_preds %>% 
+  mutate(trial = rep(1:120, times = n_distinct(agent_id)*n_distinct(learning_rate))) %>% 
+  ggplot(aes(x = trial, y = prior_pred_per_trial, col=learning_rate)) +
+  geom_smooth(method="lm", se=T, formula = "y ~ x") +
+  geom_point() + 
+  facet_wrap(~learning_rate)
   
-# ==== Plot Posterior Predictive ====

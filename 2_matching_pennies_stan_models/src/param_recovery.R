@@ -33,7 +33,7 @@ param_recov_result <- tibble()
 class(LRs)
 class(one_agent_id)
 
-aresults <- list()
+results <- list()
 trace_plots <- list()
 bad_count <- 0
   
