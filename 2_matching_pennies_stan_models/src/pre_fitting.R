@@ -45,11 +45,7 @@ if (RUN_MODEL_FIT){
   # Maybe choose some specific data or loop across it.
   testdata <- simdata %>% 
     select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
-    filter(agent_id ==5, learningRate == 0.6, noise == 0)
-  
-  inspect_data <- simdata %>% 
-    select(agent_id, trial, choicesA, choicesB, learningRate, noise, winB, ) %>% 
-    filter(agent_id == 5, learningRate == 0.6, noise == 0)
+    filter(agent_id ==5, learningRate == 0.2, noise == 0)
   
   initialV <- 0.5
   
@@ -169,6 +165,30 @@ diagnostics <- function(fit_object){
 
 diagnostics(fit_rl)
 
-# === Validation PLOTS ===
 draws <- as_draws_df(fit_rl$draws())
+fit_rl$summary("alpha") # check alpha posterior
 
+# === Validation PLOTS ===
+
+fit_rl$summary()
+
+ggplot(draws, aes(.iteration, alpha, group = .chain, color = .chain)) +
+  geom_line() +
+  theme_classic()
+
+# Plot our prior-posterior predictive
+ggplot(draws) +
+  geom_density(aes(alpha, fill = "Posterior"), alpha = 0.6) +
+  geom_density(aes(alpha_prior, fill = "Prior"), alpha = 0.6) +
+  geom_vline(xintercept = 0.6, linetype = "dashed", color = "black", linewidth = 1.2) +
+  scale_fill_manual(values = c("Posterior" = "blue", "Prior" = "red")) +
+  labs(
+    title = "Prior-Posterior (Alpha, learning rate)",
+    x = "Alpha (Learning rate)",
+    y = "Density",
+    fill = "Distribution"
+  ) +
+  theme_classic()
+  
+# Plot Posterior Predictive choices against true choices
+t <- seq(1,120)
