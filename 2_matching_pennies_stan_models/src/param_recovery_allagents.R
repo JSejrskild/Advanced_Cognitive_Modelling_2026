@@ -1,6 +1,7 @@
 # set working dir
 print(getwd())
-target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
+#target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
+target_dir <- "/work/ACM_2026/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
 if (basename(getwd()) != "2_matching_pennies_stan_models") {
   setwd(target_dir)
 }
@@ -26,7 +27,7 @@ agent_ids <- round(seq(1, 100, by = 1), digits = 0)
 ntrials <- 120
 param_recov_result <- tibble()
 class(LRs)
-class(one_agent_id)
+#class(one_agent_id)
 
 all_results <- list()
 all_agent_preds <- list()
@@ -241,3 +242,102 @@ all_agent_preds %>%
   geom_point() + 
   facet_wrap(~learning_rate)
   
+
+
+### Posterior Predictive Check ###
+
+# Extract posterior predictive simulations from fit_rl
+h_post_rep <- fit_rl$draws("choice_post_pred", format = "matrix")
+
+# Calculate the test statistic T(y) for the actual empirical data
+observed_sum <- sum(testdata$choicesA)
+
+# Calculate T(y_rep) for each replicated dataset
+post_rep_sums <- rowSums(h_post_rep)
+
+# Bundle into tibble
+ppc_df <- tibble(
+  Replicated_Sum = post_rep_sums
+)
+
+# Posterior Predictive Check plot
+ppc_posterior_ggplot <- ggplot(ppc_df, aes(x = Replicated_Sum)) +
+  geom_histogram(fill = "skyblue", color = "white", alpha = 0.7, binwidth = 1)+
+  geom_vline(xintercept = observed_sum, color = "black", linetype = "dashed", linewidth = 1) +
+  ggtitle("Posterior Predictive Check: Total 'Right' Choices") +
+  xlab(paste("Total Number of 'Right' Choices (out of", ntrials, "trials)")) +
+  ylab("Frequency (Replicated Datasets)") +
+  annotate(
+    "text", x = observed_sum, y = Inf,
+    label = "Empirical data",
+    vjust = 2, hjust = if(observed_sum > ntrials/2) 1.1 else -0.1,
+    size = 4, fontface = "bold"
+  ) +
+  theme_classic()
+
+ppc_posterior_ggplot
+
+
+## Posterior Predictive Check w. Pior behind ##
+
+# Prepare prior data (grey, opaque, background)
+prior_summary <- all_agent_preds %>%
+  mutate(trial = rep(1:120, times = n_distinct(agent_id) * n_distinct(learning_rate))) %>%
+  group_by(trial, learning_rate) %>%
+  summarise(
+    mean_pred = mean(prior_pred_per_trial, na.rm = TRUE),
+    se = sd(prior_pred_per_trial, na.rm = TRUE) / sqrt(n()),
+    ci = 1.96 * se,
+    .groups = "drop"
+  )
+
+# Prepare posterior data (coloured, foreground)
+post_summary <- all_agent_preds %>%
+  mutate(trial = rep(1:120, times = n_distinct(agent_id) * n_distinct(learning_rate))) %>%
+  group_by(trial, learning_rate) %>%
+  summarise(
+    mean_pred = mean(post_pred_per_trial, na.rm = TRUE),
+    se = sd(post_pred_per_trial, na.rm = TRUE) / sqrt(n()),
+    ci = 1.96 * se,
+    .groups = "drop"
+  )
+
+combined_pred_plot <- ggplot() +
+  # Prior: grey, behind, opaque
+  geom_ribbon(data = prior_summary,
+              aes(x = trial, ymin = mean_pred - ci, ymax = mean_pred + ci),
+              fill = "grey60", alpha = 0.15) +
+  geom_line(data = prior_summary,
+            aes(x = trial, y = mean_pred),
+            color = "black", alpha = 0.5, linewidth = 0.6, linetype = "dashed") +
+  # Posterior: coloured, foreground
+  geom_ribbon(data = post_summary,
+              aes(x = trial, ymin = mean_pred - ci, ymax = mean_pred + ci, fill = mean_pred),
+              alpha = 0.2) +
+  geom_line(data = post_summary,
+            aes(x = trial, y = mean_pred, color = mean_pred)) +
+  scale_color_gradient(low = "red", high = "green") +
+  scale_fill_gradient(low = "red", high = "green") +
+  facet_wrap(~learning_rate) +
+  ylim(0.45, 0.8) +
+  labs(
+    title = "Prior (grey) vs Posterior Prediction Accuracy",
+    x = "Trial (out of 120)",
+    y = "Prediction Accuracy",
+    color = "Posterior Mean %",
+    fill = "Posterior Mean %"
+  ) +
+  theme_classic()
+
+print(combined_pred_plot)
+
+ggsave(
+  file.path(workdir, "output", "prior_posterior_pred_plot.png"),
+  plot = combined_pred_plot,
+  width = 25, height = 20, units = "cm", dpi = 300
+)
+
+
+
+
+
