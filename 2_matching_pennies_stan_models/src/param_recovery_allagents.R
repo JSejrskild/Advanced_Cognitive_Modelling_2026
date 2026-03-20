@@ -212,6 +212,39 @@ ggplot(pick) +
   ) +
   theme_classic()
 
+# plot prior-posterior for all
+plot_data <- all_results %>%
+  pivot_longer(
+    cols = c(alpha_post, alpha_prior),
+    names_to = "Distribution",
+    values_to = "alpha_value"
+  ) %>%
+  # Make the names look nice for the legend
+  mutate(Distribution = ifelse(Distribution == "alpha_post", "posterior", "prior"))
+
+prior_post_update_all <- ggplot(plot_data) +
+  # Now we only need ONE density layer!
+  geom_density(aes(x = alpha_value, fill = Distribution), alpha = 0.6) +
+  geom_vline(aes(xintercept = learning_rate), linetype = "dashed", color = "black", linewidth = 1.2) +
+  scale_fill_manual(values = c("posterior" = "lightblue", "prior" = "orange")) +
+  labs(
+    title = "Prior-Posterior (Alpha, learning rate)",
+    x = "Alpha (Learning rate)",
+    y = "Density",
+    fill = "Distribution"
+  ) +
+  theme_classic() +
+  # Use scales = "free_y" so if one posterior is very narrow and tall, 
+  # it doesn't squash the other plots flat.
+  facet_wrap(~learning_rate, scales = "free_y")
+print(prior_post_update_all)
+
+ggsave(
+  file.path(workdir, "output", "prior_post_update_allagents.png"), 
+  plot = prior_post_update_all, 
+  width = 25, height = 20, units = "cm", dpi = 300
+)
+
 # Plot posterior means against true values
 all_results
 
@@ -240,4 +273,65 @@ all_agent_preds %>%
   geom_smooth(method="lm", se=T, formula = "y ~ x") +
   geom_point() + 
   facet_wrap(~learning_rate)
+
+prior_pred_plot <- all_agent_preds %>% 
+  mutate(trial = rep(1:120, times = n_distinct(agent_id)*n_distinct(learning_rate))) %>% 
+  group_by(trial, learning_rate) %>% 
+  summarise(
+    mean_pred = mean(prior_pred_per_trial, na.rm = TRUE),
+    se = sd(prior_pred_per_trial, na.rm = TRUE) / sqrt(n()),
+    ci = 1.96 * se,
+    .groups = "drop"
+  ) %>% 
+  ggplot(aes(x = trial, y = mean_pred, color = mean_pred)) +
+  geom_ribbon(aes(ymin = mean_pred - ci, ymax = mean_pred + ci), alpha = 0.2, color = NA) +
+  geom_line() +
+  scale_color_gradient(low="red", high="green") + 
+  facet_wrap(~learning_rate) + 
+  ylim(0.45,0.8) + 
+  labs(
+    title = "Prior Prediction Accuracy",
+    x = "Trial (out of 120)",
+    y = "Prediction Accuracy",
+    color = "Mean Prediction %"
+  ) +
+  theme_classic()
+print(prior_pred_plot)
+
+ggsave(
+  file.path(workdir, "output", "prior_pred_plot.png"), 
+  plot = prior_pred_plot, 
+  width = 25, height = 20, units = "cm", dpi = 300
+)
+
+# Posterior-Predictive
+post_pred_plot <- all_agent_preds %>% 
+  mutate(trial = rep(1:120, times = n_distinct(agent_id)*n_distinct(learning_rate))) %>% 
+  group_by(trial, learning_rate) %>% 
+  summarise(
+    mean_pred = mean(post_pred_per_trial, na.rm = TRUE),
+    se = sd(post_pred_per_trial, na.rm = TRUE) / sqrt(n()),
+    ci = 1.96 * se,
+    .groups = "drop"
+  ) %>% 
+  ggplot(aes(x = trial, y = mean_pred, color = mean_pred)) +
+  geom_ribbon(aes(ymin = mean_pred - ci, ymax = mean_pred + ci), alpha = 0.2, color = NA) +
+  geom_line() +
+  scale_color_gradient(low="red", high="green") + 
+  facet_wrap(~learning_rate) + 
+  labs(
+    title = "Posterior Prediction Accuracy",
+    x = "Trial (out of 120)",
+    y = "Prediction Accuracy",
+    color = "Mean Prediction %"
+  ) +
+  ylim(0.45,0.8) + 
+  theme_classic()
+print(post_pred_plot)
+
+ggsave(
+  file.path(workdir, "output", "post_pred_plot.png"), 
+  plot = post_pred_plot, 
+  width = 25, height = 20, units = "cm", dpi = 300
+)
   
