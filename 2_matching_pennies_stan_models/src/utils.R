@@ -2,7 +2,6 @@
 diagnostics <- function(fit_object){
   fit_summary <- fit_object$summary() # check full posterior summary (DOES NOT WORK, too much data?)
   diagnostic_summary <- fit_object$diagnostic_summary()
-  diagnostic_summary
   
   error_count = 0
   # 1. Check for Divergent Transitions (Zero Tolerance)
