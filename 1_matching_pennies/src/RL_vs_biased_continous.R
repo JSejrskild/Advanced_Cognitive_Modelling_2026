@@ -1,10 +1,9 @@
 # set working dir
 print(getwd())
-setwd('/work/ACM_2026/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models')
-#target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
-#if (basename(getwd()) != "2_matching_pennies_stan_models") {
-#  setwd(target_dir)
-#}
+target_dir <- "../1_matching_pennies"
+if (basename(getwd()) != "1_matching_pennies") {
+  setwd(target_dir)
+}
 print(getwd())
 print(list.files("."))
 # imports
@@ -22,11 +21,14 @@ n_trials <- 120
 n_agents <- 100
 
 # Build RL vs WSLS
-RL_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5) {
+RL_vs_Biased <- function(n_trials, learningRate, noise=0, initRateA=0.5) {
   RLchoicesA <- rep(NA, n_trials)
   rateA <- rep(NA, n_trials)
+  rateB <- rep(NA, n_trials)
   winA <- rep(NA, n_trials)
   winB <- rep(NA, n_trials)
+  
+  
   RLchoicesB <- rep(NA, n_trials)
   
   # Initial Values
@@ -39,6 +41,9 @@ RL_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5) {
   winA[1] <- ifelse(RLchoicesA[1]==RLchoicesB[1], 1, 0)
   winB[1] <- ifelse(RLchoicesA[1]==RLchoicesB[1], 0, 1)
   
+  # set fixed rate B
+  fixedrateB <- 0.8
+  
   for (i in 2:n_trials){
     # RL Agent A picks choice
     outputA <- RLAgent_f(
@@ -50,11 +55,12 @@ RL_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5) {
     
     RLchoicesA[i] <- outputA$choice
     rateA[i] <- outputA$currentRate
-  
+    
     
     # WSLS Agent B picks Choice
-    outputB <- WSLSAgent_f(prevChoice = RLchoicesB[i-1], feedback = winB[i-1], noise = 0)
-    RLchoicesB[i] <- outputB$choice
+    choice <- RandomAgent_f(1, rate=fixedrateB, noise=0, returnList = FALSE)
+    RLchoicesB[i] <- choice
+    rateB[i] <- fixedrateB
     
     # decide win/loss
     winA[i] <- ifelse(RLchoicesA[i]==RLchoicesB[i], 1, 0)
@@ -83,7 +89,7 @@ RL_vs_WSLS <- function(n_trials, learningRate, noise=0, initRateA=0.5) {
 }
 
 # Run and return data for N Trials
-result <- RL_vs_WSLS(
+result <- RL_vs_Biased(
   n_trials = n_trials, 
   learningRate = 0.1, 
   noise = 0,
@@ -93,16 +99,14 @@ result <- RL_vs_WSLS(
 # ------------------------------------
 # - Loop over parameter combinations -
 # ------------------------------------
-learningRateList <- seq(from = 0, to = 1, by = 0.1)
-noiseList <- seq(from = 0, to = 1, by = 0.1)
 
-combinations <- expand.grid(
-  learningRate = learningRateList, 
-  noise = noiseList
+combinations <- tibble(
+  learningRate = runif(n_agents, min = 0, max = 1),
+  noise        = 0
 )
 
 results <- combinations %>% 
-  pmap_dfr(~ RL_vs_WSLS(
+  pmap_dfr(~ RL_vs_Biased(
     n_trials = n_trials,
     learningRate = ..1,
     noise = ..2,
@@ -117,11 +121,10 @@ plan(multisession, workers = nWorkers) # prepare parrallel processing
 
 # Create a data frame with all combinations and agent IDs
 agent_combinations <- combinations %>%
-  slice(rep(row_number(), each = n_agents)) %>%
-  mutate(agent_id = rep(1:n_agents, nrow(combinations)))
+  mutate(agent_id = 1:n())
 
 simulate_agent_pair <- function(learningRate, noise, agent_id) {
-  RL_vs_WSLS(
+  RL_vs_Biased(
     n_trials = n_trials,
     learningRate = learningRate,
     noise = noise,
@@ -144,5 +147,5 @@ plan(sequential) # reverse to sequential processing
 
 
 # Save results to csv
-filepath <- "data/RL_vs_WSLS.csv"
+filepath <- "data/RL_vs_biased.csv"
 write.csv(resultsPar, filepath)

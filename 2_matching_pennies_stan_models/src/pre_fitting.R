@@ -1,23 +1,44 @@
 # set working dir
 print(getwd())
+<<<<<<< HEAD
+#target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
+setwd('/work/ACM_2026/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models')
+#target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
+#if (basename(getwd()) != "2_matching_pennies_stan_models") {
+#  setwd(target_dir)
+#}
+print(getwd())
+=======
 target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
 if (basename(getwd()) != "2_matching_pennies_stan_models") {
   setwd(target_dir)
 }
 setwd(target_dir)
 print(getwd()) # !WD root should be 2_matching_pennies_stan_models
+>>>>>>> 248bf4b7f5777c7d056acbca6daf5a694c0acc9d
 print(list.files("."))
 workdir <- getwd()
 # imports
 pacman::p_load("tidyverse", "cmdstanr", "here", "posterior", "bayesplot", "patchwork")
 
-fpath <- "data/RL_vs_biased.csv"
+fpath <- "data/RL_vs_WSLS.csv"
 simdata <- read_csv(fpath)
 
+<<<<<<< HEAD
+# Maybe choose some specific data or loop across it.
+testdata <- simdata %>% 
+  select(agent_id, trial, choicesA, winA, learningRate, noise, choicesB) %>% 
+  filter(learningRate == 0.5, noise == 0)
+
+inspect_data <- simdata %>% 
+  select(agent_id, trial, choicesA, winA, learningRate, noise, winB) %>% 
+  filter(learningRate == 0.5, noise == 0)
+=======
 outputdir <- paste0(workdir,"/output")
 model_file <- paste0(outputdir, "/rlmodel_fit.rds")
 
 RUN_MODEL_FIT = TRUE # if false we read in previously saved model file
+>>>>>>> 248bf4b7f5777c7d056acbca6daf5a694c0acc9d
 
 if (RUN_MODEL_FIT){
   # === SET INPUT DATA ===
@@ -72,6 +93,39 @@ if (RUN_MODEL_FIT){
   fit_rl <- readRDS(model_file)
 }
 
+<<<<<<< HEAD
+# setup stan data structure
+sdata <- list(
+  t = length(testdata$choicesA),
+  choice = testdata$choicesA,
+  feedback = testdata$choicesB,
+  initialV = initialV,
+  alpha_prior_mu = 0,
+  alpha_prior_sd = 1.5
+)
+
+rlmodelpath <- here("ACM_2026/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models", "src", "RL_model.stan")
+print(rlmodelpath)
+outputdir <- "output"
+model_file <- here(outputdir, "RL_fit.rds")
+
+rlmodel <- cmdstan_model(rlmodelpath) # create the stan model object
+
+fit_rl <- rlmodel$sample( # set configuations
+  data=sdata,
+  seed=231,
+  chains= 4,
+  parallel_chains = 4,
+  iter_warmup = 1000,
+  iter_sampling = 2000,
+  refresh = 500
+)
+
+# Save the fitted model object
+#fit_rl$save_object(file= model_file)
+print(fit_rl$summary())
+print(plogis(as.numeric(fit_rl$summary("alpha")['mean'])))
+=======
 # --------------------------------------------
 
 # === MCMC DIAGNOSITCS ===
@@ -107,6 +161,7 @@ diagnostics <- function(fit_object){
     warning("WARNING: Insufficient Effective Sample Size. Autocorrelation is too high. Run longer chains.")
   }
 }
+>>>>>>> 248bf4b7f5777c7d056acbca6daf5a694c0acc9d
 
 diagnostics(fit_rl)
 
