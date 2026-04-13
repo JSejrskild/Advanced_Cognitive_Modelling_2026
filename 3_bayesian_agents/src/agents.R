@@ -1,10 +1,10 @@
-# Agentf for simulation WBA and PBA
+# Agent for simulation WBA and PBA
 
-WBA_agent_f <- function(n_trials, alpha, beta, ws, wd){
+WBA_agent_f <- function(n_trials, alpha, beta, ws, wd, choice_1){
   
   # Choice 1  - Beta-Binomial
-  probability <- rbeta(n_trials, alpha, beta)
-  choice_1    <- rbinom(n_trials, size = 7, prob = probability) + 1
+  #probability <- rbeta(n_trials, alpha, beta)
+  #choice_1    <- rbinom(n_trials, size = 7, prob = probability) + 1
   
   # Draw feedback (social/group rating)
   pool            <- init_feedback_pool(n_trials)
@@ -13,8 +13,9 @@ WBA_agent_f <- function(n_trials, alpha, beta, ws, wd){
   feedback_draw   <- feedback_result$feedback_draw
   
   # WBA equation
-  alpha_post <- 0.5 + wd * choice_1 + ws * group_rating
-  beta_post  <- 0.5 + wd * (8 - choice_1) + ws * (8 - group_rating)
+  alpha_post <- pmax(0.5 + wd * choice_1 + ws * group_rating, 1e-6)
+  beta_post  <- pmax(0.5 + wd * (8 - choice_1) + ws * (8 - group_rating), 1e-6)
+  
   
   # Choice 2 
   probability_post <- rbeta(n_trials, alpha_post, beta_post)
@@ -73,11 +74,11 @@ draw_feedback <- function(choice_1_vec, pool){ #Using the pool of values to draw
 }
 
 
-PBA_agent_f <- function(n_trials, alpha, beta, ws, wd){
+PBA_agent_f <- function(n_trials, alpha, beta, ws, wd, choice_1){
     
     # Choice 1  - Beta-Binomial
-    probability <- rbeta(n_trials, alpha, beta)
-    choice_1    <- rbinom(n_trials, size = 7, prob = probability) + 1
+    #probability <- rbeta(n_trials, alpha, beta)
+    #choice_1    <- rbinom(n_trials, size = 7, prob = probability) + 1
     
     # Draw feedback (social/group rating)
     pool            <- init_feedback_pool(n_trials)
@@ -88,9 +89,9 @@ PBA_agent_f <- function(n_trials, alpha, beta, ws, wd){
     # Ensure that the weights are proportional and therefor just one p 
     p = wd / (wd + ws)
     
-    # WBA equation
-    alpha_post <- 0.5 + p * choice_1 + (1-p) * group_rating
-    beta_post  <- 0.5 + p * (8 - choice_1) + (1-p) * (8 - group_rating)
+    # PBA equation
+    alpha_post <- pmax(0.5 + p * choice_1 + (1-p) * group_rating, 1e-6)
+    beta_post  <- pmax(0.5 + p * (8 - choice_1) + (1-p) * (8 - group_rating), 1e-6)
     
     # Choice 2 
     probability_post <- rbeta(n_trials, alpha_post, beta_post)
@@ -113,9 +114,3 @@ PBA_agent_f <- function(n_trials, alpha, beta, ws, wd){
   
 }
 
-
-
-# --- Test ---
-result <- PBA_agent_f(n_trials = 20, alpha = 1, beta = 1, ws = 1, wd = 0.2)
-print(result)
-table(result$feedback)
