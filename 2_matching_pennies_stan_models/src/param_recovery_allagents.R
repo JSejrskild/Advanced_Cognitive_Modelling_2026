@@ -21,7 +21,7 @@ rlmodelpath <- "src/RL_model.stan"
 print(rlmodelpath)
 rlmodel <- cmdstan_model(rlmodelpath) # create the stan model object
 
-LRs <- round(seq(0.1, 1, by = 0.1), digits = 1)
+LRs <- round(seq(0.0, 1, by = 0.1), digits = 1)
 agent_ids <- round(seq(1, 100, by = 1), digits = 0)
 ntrials <- 120
 param_recov_result <- tibble()
@@ -141,6 +141,15 @@ posterior_means <- all_results %>%
     .groups = "drop"
   )
 
+# save final results 
+results_path <- paste0(outputdir, "/rlmodel_allresults.rds")
+saveRDS(final_results, file = results_path)
+
+# load data if the path/file exists
+if (results_path.exists) {
+  loadRDS(results_path)
+}
+
 # --------------------------------------------
 
 # === MCMC DIAGNOSITCS ===
@@ -193,6 +202,10 @@ ggsave(
   plot = combined_trace_plots, 
   width = 25, height = 20, units = "cm", dpi = 300
 )
+
+# ==== Inspect Results ===
+all_results %>% 
+  filter(learning_rate==0)
 
 # === Validation PLOTS ===
 
@@ -254,25 +267,21 @@ param_recov_allagents <- ggplot(posterior_means, aes(x=learning_rate, y=mean_alp
   geom_smooth(method="lm", se=T, formula = "y ~ x") +
   labs(
     title = "Parameter Recovery (Alpha, learning rate)",
-    x = "Alpha (learning rate)",
+    x = "True learning rate",
     y = "Mean alpha posterior"
   ) +
+  xlim(0,1) +
   theme_classic()
+print(param_recov_allagents)
 
 ggsave(
   file.path(workdir, "output", "parameter_recovery_allagents.png"), 
   plot = param_recov_allagents, 
-  width = 25, height = 20, units = "cm", dpi = 300
+  width = 23, height = 20, units = "cm", dpi = 300
 )
 
 # Prior-Predictive
 sum(is.na(all_agent_preds))
-all_agent_preds %>% 
-  mutate(trial = rep(1:120, times = n_distinct(agent_id)*n_distinct(learning_rate))) %>% 
-  ggplot(aes(x = trial, y = prior_pred_per_trial, col=learning_rate)) +
-  geom_smooth(method="lm", se=T, formula = "y ~ x") +
-  geom_point() + 
-  facet_wrap(~learning_rate)
 
 prior_pred_plot <- all_agent_preds %>% 
   mutate(trial = rep(1:120, times = n_distinct(agent_id)*n_distinct(learning_rate))) %>% 
