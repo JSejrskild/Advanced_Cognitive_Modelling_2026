@@ -6,11 +6,7 @@ data {
   array[t] itt<lower=1, upper=8> choice_1;
   array[t] itt<lower=1, upper=8> group_rating;
   array[t] itt<lower=1, upper=8> choice_2;
-
-  array[t] itt<lower=0> blue1;
-  array[t] itt<lower=0> total1;
-  array[t] itt<lower=0> blue2;
-  array[t] itt<lower=0> total2;
+  
 }
 
 parameters {
@@ -18,17 +14,19 @@ parameters {
 }
 
 model {
+  int max_rating = 7;
   // Beta(2, 2): weakly bell-shaped, symmetric about 0.5
-  target += beta_lpdf(p | 2, 2);
+  target += beta_lpdf(p | 2, 2); //prior on the weight, p
 
   // Vectorized likelihood
   vector[t] alpha_post = 0.5 + p * to_vector(choice_1) + (1-p) * to_vector(group_rating);
-  vector[t] beta_post  = 0.5 + p * (8 - to_vector(choice_1)) + (1-p) * (8 - to_vector(group_rating));
-                             
-  target += beta_bitomial_lpmf(choice_2 | 7, alpha_post, beta_post) + 1;
+  vector[t] beta_post  = 0.5 + p * (max_rating - to_vector(choice_1)) + (1-p) * (max_rating - to_vector(group_rating));
+  
+  
+  target += beta_binomial_lpmf(choice_2 | 7, alpha_post, beta_post) + 1;
 }
 
-geterated quattities {
+generated quantaties {
   vector[t] log_lik;
   array[t] itt prior_pred;
   array[t] itt posterior_pred;
@@ -49,8 +47,3 @@ geterated quattities {
     prior_pred[i] = beta_bitomial_rtg(1, ap, bp);
   }
 }
-"
-
-write_stat_file(ProportiotalAgett_stat,
-                dir = "stat/",
-                basetame = "ch9_proportiotal_agett.stat")
