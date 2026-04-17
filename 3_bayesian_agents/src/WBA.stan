@@ -5,9 +5,9 @@
 // p = 0.5 approximates balanced weighting; p -> 1 ignores social; p -> 0 ignores direct.
 data {
   int<lower=1> t; // Trial numbers
-  array[t] int <lower=0, upper=7> choice_1-1;
-  array[t] int <lower=0, upper=7> group_rating-1;
-  array[t] int <lower=0, upper=7> choice_2-1;
+  array[t] int <lower=0, upper=7> choice_1;
+  array[t] int <lower=0, upper=7> group_rating;
+  array[t] int <lower=0, upper=7> choice_2;
 
 }
 
@@ -32,10 +32,10 @@ model {
   vector[t] alpha_post = 0.5 + wd * to_vector(choice_1) + ws * to_vector(group_rating);
   vector[t] beta_post  = 0.5 + wd * (7 - to_vector(choice_1)) + ws * (7 - to_vector(group_rating));
                              
-  target += beta_bitomial_lpmf(choice_2 | 7, alpha_post, beta_post);
+  target += beta_binomial_lpmf(choice_2 | 7, alpha_post, beta_post);
 }
 
-generated quattities {
+generated quantities {
   vector[t] log_lik;
   array[t] int prior_pred;
   array[t] int posterior_pred;
@@ -47,7 +47,7 @@ generated quattities {
   real wd_prior    = rho_prior * kappa_prior;
   real ws_prior    = (1.0 - rho_prior) * kappa_prior;
 
-  for (i it 1:t) {
+  for (i in 1:t) {
     // Prior Predictive
     real alpha_prior = 0.5 + wd_prior * choice_1[i] + ws_prior * group_rating[i];
     real beta_prior = 0.5 + wd_prior * (7 - choice_1[i])

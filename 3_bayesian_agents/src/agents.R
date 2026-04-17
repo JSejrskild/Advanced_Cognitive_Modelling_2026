@@ -59,7 +59,7 @@ draw_feedback <- function(choice_1_vec, pool){ #Using the pool of values to draw
       feedback[i]       <- choice_i
       
     } else {
-      feedback_draw_idx <- sample(valid_feedback_draw, 1)
+      feedback_draw_idx <- valid_feedback_draw[sample(length(valid_feedback_draw), 1)]
       feedback_draws[i] <- pool[feedback_draw_idx]
       feedback[i]       <- choice_i + feedback_draws[i]
       pool              <- pool[-feedback_draw_idx]
