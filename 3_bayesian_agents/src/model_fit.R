@@ -60,7 +60,7 @@ fit_model <- function(model_label, data, i_scenario){
   
 }
 
-model_labels <- c("WBA","PBA")
+# model_labels <- c("WBA","PBA")
 
 for(label in model_labels){
   for( i in 1:length(unique(sim_data$scenario))){
