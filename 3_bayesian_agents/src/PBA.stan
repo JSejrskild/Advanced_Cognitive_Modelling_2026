@@ -14,16 +14,14 @@ parameters {
 }
 
 model {
-  int max_rating = 7;
   // Beta(2, 2): weakly bell-shaped, symmetric about 0.5
-  target += beta_lpdf(p | alpha_prior, beta_prior); //prior on the weight, p
+  target += beta_lpdf(p | 2, 2);
 
   // Vectorized likelihood
   vector[t] alpha_post = 0.5 + p * to_vector(choice_1) + (1-p) * to_vector(group_rating);
-
-  vector[t] beta_post  = 0.5 + p * (max_rating - to_vector(choice_1)) + (1-p) * (max_rating - to_vector(group_rating));
+  vector[t] beta_post  = 0.5 + p * (7 - to_vector(choice_1)) + (1-p) * (7 - to_vector(group_rating));
                              
-  target += beta_binomial_lpmf(choice_2 | max_rating, alpha_post, beta_post);
+  target += beta_binomial_lpmf(choice_2 | 7, alpha_post, beta_post);
 }
 
 generated quantities {
@@ -36,17 +34,18 @@ generated quantities {
   for (i in 1:t) {
     // Prior Predictive
     real alpha_prior = 0.5 + p_prior * choice_1[i] + (1 - p_prior) * group_rating[i];
-    real beta_prior = 0.5 + p_prior * (max_rating - choice_1[i])
-                  + (1 - p_prior) * (max_rating - group_rating[i]);
+    real beta_prior = 0.5 + p_prior * (7 - choice_1[i])
+                  + (1 - p_prior) * (7 - group_rating[i]);
                   
-    prior_pred[i] = beta_binomial_rng(max_rating, alpha_prior, beta_prior)+1;
+    prior_pred[i] = beta_binomial_rng(7, alpha_prior, beta_prior)+1;
     
     // Posterior predictive
     real alpha_post = 0.5 + p * choice_1[i] + (1.0 - p) * group_rating[i];
-    real beta_post  = 0.5 + p * (max_rating - choice_1[i]) + (1-p) * (max_rating - group_rating[i]);
+    real beta_post  = 0.5 + p * (7 - choice_1[i]) + (1-p) * (7 - group_rating[i]);
 
-    log_lik[i]        = beta_binomial_lpmf(choice_2[i] | max_rating, alpha_post, beta_post)+1;
-    posterior_pred[i] = beta_binomial_rng(max_rating, alpha_post, beta_post)+1;
+    log_lik[i]        = beta_binomial_lpmf(choice_2[i] | 7, alpha_post, beta_post)+1;
+    posterior_pred[i] = beta_binomial_rng(7, alpha_post, beta_post)+1;
+
    
-  }
+  };
 }
