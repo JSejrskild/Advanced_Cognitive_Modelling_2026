@@ -18,19 +18,20 @@ print(output_dir)
 setup_stan_data <- function(df){
   
   stan_data <- list(
-    trial = df$trial,
-    choice_1 = df$choice_1,
-    group_rating = df$group_rating,
-    choice_2 = df$choice_2
+    t = length(df$trial),
+    choice_1 = df$choice_1 - 1,
+    group_rating = df$group_rating - 1,
+    choice_2 = df$choice_2 - 1
   )
   
   return(stan_data)
 }
 
 fit_model <- function(model_label, data, i_scenario){
-    
+  
   # Where to save model fit
-  modelfit_name <- paste0(model_label,"_scenario", str(i_scenario), "_modelfit.rds")
+  modelfit_name <- paste0(model_label,"_scenario", i_scenario, "_modelfit.rds")
+
   modelfit_path <- here(output_dir, modelfit_name)
   
   model_name <- paste0(model_label, ".stan")
@@ -60,13 +61,13 @@ fit_model <- function(model_label, data, i_scenario){
   
 }
 
-# model_labels <- c("WBA","PBA")
+model_labels <- c("WBA","PBA")
 
 for(label in model_labels){
   for( i in 1:length(unique(sim_data$scenario))){
     
     scenario_data <- sim_data %>% 
-      filter(scenario==i, agent=label)
+      filter(scenario==i, agent==label)
     
     fit_model(model_label = label, data = scenario_data, i_scenario = i)
   }

@@ -93,7 +93,6 @@ draw_feedback <- function(choice_1_vec, pool){ #Using the pool of values to draw
   
   for(i in 1:n){ # Taking a viable feedback from the pool and removing it from the pool afterwards, if no viable left choose to give the same as choice_1
     choice_i <- choice_1_vec[i]
-    # Creates a boolean vector of length n_pool that is true if the choice+feedback is not exceeding boundary
     valid_feedback_draw <- which(choice_i + pool >= 1 & choice_i + pool <= 8)
     
     if(length(valid_feedback_draw) == 0){
@@ -101,7 +100,7 @@ draw_feedback <- function(choice_1_vec, pool){ #Using the pool of values to draw
       feedback[i]       <- choice_i
       
     } else {
-      feedback_draw_idx <- sample(valid_feedback_draw, 1)
+      feedback_draw_idx <- valid_feedback_draw[sample(length(valid_feedback_draw), 1)]
       feedback_draws[i] <- pool[feedback_draw_idx]
       feedback[i]       <- choice_i + feedback_draws[i]
       pool              <- pool[-feedback_draw_idx]
@@ -114,5 +113,3 @@ draw_feedback <- function(choice_1_vec, pool){ #Using the pool of values to draw
     pool          = pool
   ))
 }
-
-
