@@ -47,5 +47,5 @@ generated quantities {
     posterior_pred[i] = beta_binomial_rng(7, alpha_post, beta_post)+1;
 
    
-  }
+  };
 }

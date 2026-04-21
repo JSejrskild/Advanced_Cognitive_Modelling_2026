@@ -1,4 +1,4 @@
-# This is the simulation for 2 agents playing the experiment. 
+# This is the simulation for 2 agents playing the experiment.
 # The two agents are: WBA and PBA
 
 # The variables:
@@ -10,12 +10,14 @@
 # Change: How much did the 2_rating change from the 1_rating (-7 to 7) but probably in the middle 
 # Condition: Pre or Peri depending on whether the data was aquired before or during the pandemic
 
+pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "tidyr", "ggplot2", "here", "fs")
 
-print(getwd())
-setwd('/work/ACM_2026/Advanced_Cognitive_Modelling_2026/3_bayesian_agents')
+print(here()) # work dir
+new_wd <- here('3_bayesian_agents') # root/path
+setwd(new_wd)
 print(list.files("."))
 # imports
-pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "tidyr", "ggplot2")
+
 source("src/agents.R")
 
 # Set seed
@@ -68,11 +70,17 @@ for(i in 1:5){
   results_list[[i]] <- rbind(wba, pba)
 }
 
+# TODO:Should we save in a combined df or two seperate?
 results_df <- do.call(rbind, results_list)
+
+dir_create("data")
 write_csv(results_df, "data/results_df.csv")
 
-
+# ------------------------------------------
 # Fitting the model in stan
+# -
+
+
 
 
 

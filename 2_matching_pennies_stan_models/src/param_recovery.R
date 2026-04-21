@@ -19,14 +19,15 @@ model_file <- paste0(outputdir, "/rlmodel_fit.rds")
 
   # === SET INPUT DATA ===
   # Maybe choose some specific data or loop across it
-
+rlmodelpath <- "src/RL_model.stan"
+print(rlmodelpath)
 rlmodel <- cmdstan_model(rlmodelpath) # create the stan model object
 
 inspect <- simdata %>% 
   select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
-  filter(agent_id == 23, learningRate == 0.7, noise == 0)
+  filter(agent_id == 23, learningRate == 0.0, noise == 0)
 
-LRs <- round(seq(0.1, 1, by = 0.1), digits = 1)
+LRs <- round(seq(0.0, 1, by = 0.1), digits = 1)
 agents <- seq(0,100)
 ntrials <- 120
 param_recov_result <- tibble()
@@ -43,7 +44,7 @@ for (i in LRs){
   print(paste("============== Learning Rate: ", i, "=============="))
   testdata <- simdata %>% 
       select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
-      filter(learningRate == i, noise == 0)
+      filter(agent_id==23, learningRate == i, noise == 0)
   
   if (nrow(testdata) == 0) {
     print(paste("No data for learning rate", i))
@@ -69,8 +70,6 @@ for (i in LRs){
   )
   
   # === FIT MODEL ===
-  rlmodelpath <- "src/RL_model.stan"
-  print(rlmodelpath)
   
   fit_rl <- rlmodel$sample( # set configuations
     data=sdata,
@@ -164,6 +163,11 @@ ggsave(
   width = 25, height = 20, units = "cm", dpi = 300
 )
 
+# === Inspect the draws/results ===
+all_results %>% 
+  filter(learning_rate==0.0) %>% 
+  
+
 # === Validation PLOTS ===
 
 # Plot one prior-posterior:
@@ -208,7 +212,7 @@ lr_param_recov_plot1 <- ggplot(plot_data) +
   # it doesn't squash the other plots flat.
   facet_wrap(~learning_rate, scales = "free_y")
 
-plotpath <- file.path(workdir, "output", "lr_param_recov_plot1.png")
+plotpath <- file.path(workdir, "output", "prior_post_update_oneagent.png")
 ggsave(plotpath, plot=lr_param_recov_plot1, 
        width = 20,
        height = 14,

@@ -3,13 +3,10 @@
 pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "tidyr", "ggplot2", "here", "fs",
                "cmdstanr", "posterior")
 # set working dir
-#print(here())
-#workdir <- here('3_bayesian_agents') # root/path
-#setwd(workdir)
-setwd('/work/ACM_2026/Advanced_Cognitive_Modelling_2026/3_bayesian_agents')
-workdir <- getwd()
+print(here())
+workdir <- here('3_bayesian_agents') # root/path
+setwd(workdir)
 print(list.files("."))
-print(workdir)
 
 # === Setup input data and IO ===
 sim_fpath <- "data/results_df.csv"
@@ -24,7 +21,7 @@ setup_stan_data <- function(df){
     t = length(df$trial),
     choice_1 = df$choice_1 - 1,
     group_rating = df$group_rating - 1,
-    choice_2 = df$choice_2 -1
+    choice_2 = df$choice_2 - 1
   )
   
   return(stan_data)
@@ -34,6 +31,7 @@ fit_model <- function(model_label, data, i_scenario){
   
   # Where to save model fit
   modelfit_name <- paste0(model_label,"_scenario", i_scenario, "_modelfit.rds")
+
   modelfit_path <- here(output_dir, modelfit_name)
   
   model_name <- paste0(model_label, ".stan")

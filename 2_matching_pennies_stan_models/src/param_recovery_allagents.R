@@ -22,7 +22,7 @@ rlmodelpath <- "src/RL_model.stan"
 print(rlmodelpath)
 rlmodel <- cmdstan_model(rlmodelpath) # create the stan model object
 
-LRs <- round(seq(0.1, 1, by = 0.1), digits = 1)
+LRs <- round(seq(0.0, 1, by = 0.1), digits = 1)
 agent_ids <- round(seq(1, 100, by = 1), digits = 0)
 ntrials <- 120
 param_recov_result <- tibble()
@@ -142,6 +142,15 @@ posterior_means <- all_results %>%
     .groups = "drop"
   )
 
+# save final results 
+results_path <- paste0(outputdir, "/rlmodel_allresults.rds")
+saveRDS(final_results, file = results_path)
+
+# load data if the path/file exists
+if (results_path.exists) {
+  loadRDS(results_path)
+}
+
 # --------------------------------------------
 
 # === MCMC DIAGNOSITCS ===
@@ -195,6 +204,10 @@ ggsave(
   width = 25, height = 20, units = "cm", dpi = 300
 )
 
+# ==== Inspect Results ===
+all_results %>% 
+  filter(learning_rate==0)
+
 # === Validation PLOTS ===
 
 # Plot one prior-posterior:
@@ -213,6 +226,39 @@ ggplot(pick) +
   ) +
   theme_classic()
 
+# plot prior-posterior for all
+plot_data <- all_results %>%
+  pivot_longer(
+    cols = c(alpha_post, alpha_prior),
+    names_to = "Distribution",
+    values_to = "alpha_value"
+  ) %>%
+  # Make the names look nice for the legend
+  mutate(Distribution = ifelse(Distribution == "alpha_post", "posterior", "prior"))
+
+prior_post_update_all <- ggplot(plot_data) +
+  # Now we only need ONE density layer!
+  geom_density(aes(x = alpha_value, fill = Distribution), alpha = 0.6) +
+  geom_vline(aes(xintercept = learning_rate), linetype = "dashed", color = "black", linewidth = 1.2) +
+  scale_fill_manual(values = c("posterior" = "lightblue", "prior" = "orange")) +
+  labs(
+    title = "Prior-Posterior (Alpha, learning rate)",
+    x = "Alpha (Learning rate)",
+    y = "Density",
+    fill = "Distribution"
+  ) +
+  theme_classic() +
+  # Use scales = "free_y" so if one posterior is very narrow and tall, 
+  # it doesn't squash the other plots flat.
+  facet_wrap(~learning_rate, scales = "free_y")
+print(prior_post_update_all)
+
+ggsave(
+  file.path(workdir, "output", "prior_post_update_allagents.png"), 
+  plot = prior_post_update_all, 
+  width = 25, height = 20, units = "cm", dpi = 300
+)
+
 # Plot posterior means against true values
 all_results
 
@@ -222,21 +268,27 @@ param_recov_allagents <- ggplot(posterior_means, aes(x=learning_rate, y=mean_alp
   geom_smooth(method="lm", se=T, formula = "y ~ x") +
   labs(
     title = "Parameter Recovery (Alpha, learning rate)",
-    x = "Alpha (learning rate)",
+    x = "True learning rate",
     y = "Mean alpha posterior"
   ) +
+  xlim(0,1) +
   theme_classic()
+print(param_recov_allagents)
 
 ggsave(
   file.path(workdir, "output", "parameter_recovery_allagents.png"), 
   plot = param_recov_allagents, 
-  width = 25, height = 20, units = "cm", dpi = 300
+  width = 23, height = 20, units = "cm", dpi = 300
 )
 
 # Prior-Predictive
 sum(is.na(all_agent_preds))
-all_agent_preds %>% 
+
+prior_pred_plot <- all_agent_preds %>% 
   mutate(trial = rep(1:120, times = n_distinct(agent_id)*n_distinct(learning_rate))) %>% 
+<<<<<<< HEAD
+  group_by(trial, learning_rate) %>% 
+=======
   ggplot(aes(x = trial, y = prior_pred_per_trial, col=learning_rate)) +
   geom_smooth(method="lm", se=T, formula = "y ~ x") +
   geom_point() + 
@@ -284,22 +336,76 @@ ppc_posterior_ggplot
 prior_summary <- all_agent_preds %>%
   mutate(trial = rep(1:120, times = n_distinct(agent_id) * n_distinct(learning_rate))) %>%
   group_by(trial, learning_rate) %>%
+>>>>>>> origin/main
   summarise(
     mean_pred = mean(prior_pred_per_trial, na.rm = TRUE),
     se = sd(prior_pred_per_trial, na.rm = TRUE) / sqrt(n()),
     ci = 1.96 * se,
     .groups = "drop"
+<<<<<<< HEAD
+  ) %>% 
+  ggplot(aes(x = trial, y = mean_pred, color = mean_pred)) +
+  geom_ribbon(aes(ymin = mean_pred - ci, ymax = mean_pred + ci), alpha = 0.2, color = NA) +
+  geom_line() +
+  scale_color_gradient(low="red", high="green") + 
+  facet_wrap(~learning_rate) + 
+  ylim(0.45,0.8) + 
+  labs(
+    title = "Prior Prediction Accuracy",
+    x = "Trial (out of 120)",
+    y = "Prediction Accuracy",
+    color = "Mean Prediction %"
+  ) +
+  theme_classic()
+print(prior_pred_plot)
+
+ggsave(
+  file.path(workdir, "output", "prior_pred_plot.png"), 
+  plot = prior_pred_plot, 
+  width = 25, height = 20, units = "cm", dpi = 300
+)
+
+# Posterior-Predictive
+post_pred_plot <- all_agent_preds %>% 
+  mutate(trial = rep(1:120, times = n_distinct(agent_id)*n_distinct(learning_rate))) %>% 
+  group_by(trial, learning_rate) %>% 
+=======
   )
 
 # Prepare posterior data (coloured, foreground)
 post_summary <- all_agent_preds %>%
   mutate(trial = rep(1:120, times = n_distinct(agent_id) * n_distinct(learning_rate))) %>%
   group_by(trial, learning_rate) %>%
+>>>>>>> origin/main
   summarise(
     mean_pred = mean(post_pred_per_trial, na.rm = TRUE),
     se = sd(post_pred_per_trial, na.rm = TRUE) / sqrt(n()),
     ci = 1.96 * se,
     .groups = "drop"
+<<<<<<< HEAD
+  ) %>% 
+  ggplot(aes(x = trial, y = mean_pred, color = mean_pred)) +
+  geom_ribbon(aes(ymin = mean_pred - ci, ymax = mean_pred + ci), alpha = 0.2, color = NA) +
+  geom_line() +
+  scale_color_gradient(low="red", high="green") + 
+  facet_wrap(~learning_rate) + 
+  labs(
+    title = "Posterior Prediction Accuracy",
+    x = "Trial (out of 120)",
+    y = "Prediction Accuracy",
+    color = "Mean Prediction %"
+  ) +
+  ylim(0.45,0.8) + 
+  theme_classic()
+print(post_pred_plot)
+
+ggsave(
+  file.path(workdir, "output", "post_pred_plot.png"), 
+  plot = post_pred_plot, 
+  width = 25, height = 20, units = "cm", dpi = 300
+)
+  
+=======
   )
 
 combined_pred_plot <- ggplot() +
@@ -341,3 +447,4 @@ ggsave(
 
 
 
+>>>>>>> origin/main
