@@ -5,8 +5,7 @@ pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "ti
 # set working dir
 print(here())
 workdir <- here('3_bayesian_agents') # root/path
-#setwd(workdir)
-workdir <- setwd('/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/3_bayesian_agents')
+setwd(workdir)
 print(list.files("."))
 
 #Data list
