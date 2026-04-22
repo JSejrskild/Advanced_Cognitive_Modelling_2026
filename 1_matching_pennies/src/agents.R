@@ -1,5 +1,5 @@
 
-RandomAgent_f <- function(n_trials, rate = 0.5, noise = 0) {
+RandomAgent_f <- function(n_trials, rate = 0.5, noise = 0, returnList = FALSE) {
   # Input validation
   if (!is.numeric(rate) || rate < 0 || rate > 1) {
     stop("Rate must be a probability between 0 and 1.")
@@ -19,7 +19,11 @@ RandomAgent_f <- function(n_trials, rate = 0.5, noise = 0) {
     choices[noise_trials] <- rbinom(sum(noise_trials), size = 1, prob = 0.5)
   }
   
-  return(choices)
+  if (returnList) {
+    return(list(choice=choices))
+  } else {
+    return(choices)
+  }
 }
 
 WSLSAgent_f <- function(prevChoice, feedback, noise = 0) {
@@ -39,9 +43,10 @@ WSLSAgent_f <- function(prevChoice, feedback, noise = 0) {
     choice <- sample(c(0, 1), 1)
   }
   
-  return(choice)
+  return(list(choice=choice))
 }
 
+<<<<<<< HEAD
 RLAgent_f <- function(prevrate, feedback, learningRate = 0.1, noise = 0) {
   # Input validation
   if (!is.numeric(prevrate) || prevrate < 0 || prevrate > 1) stop("Previous rate must be a probability between 0 and 1.")
@@ -61,7 +66,83 @@ RLAgent_f <- function(prevrate, feedback, learningRate = 0.1, noise = 0) {
   }
   
   return(list(choice = choice, rate = rate))
+=======
+RLAgent_f <- function(prevRate, learningRate, feedback, noise = 0) {
+  # Input validation
+  if (!is.numeric(prevRate) || prevRate < 0 || prevRate > 1) stop("Previous rate must be between 0 or 1.")
+  if (!is.numeric(learningRate) || learningRate < 0 || learningRate > 1) stop("Learning rate must be between 0 or 1.")
+  if (!feedback %in% c(0, 1)) stop("Feedback must be 0 or 1.")
+  if (!is.numeric(noise) || noise < 0 || noise > 1) stop("Noise must be a probability between 0 and 1.")
+  
+  # RW Equation
+  currentRate = prevRate + learningRate * (feedback - prevRate)
+  
+  # Choice function
+  choice = rbinom(1, size = 1, prob = currentRate)
+  
+  
+  # NOISE
+  # Apply noise if specified
+  if (noise > 0 && runif(1) < noise) {
+    # Override with a random 50/50 choice
+    choice <- sample(c(0, 1), 1)
+  }
+  
+  return(list(choice = choice,
+              currentRate = currentRate))
+>>>>>>> 887ace0f8f4cf3e979cea3c763937c356fbd375f
 }
 
-
-
+# Reinforcement Learning + Random Mixture model agent
+RLRAgent_f <- function(
+    prevRate,
+    prevChoice,
+    learningRate,
+    feedback,
+    winStreak = 0,
+    lossStreak = 0,
+    losing=FALSE,
+    noise = 0,
+    kSwitch = 3
+) {
+  # Input validation
+  if (!is.numeric(prevRate) || prevRate < 0 || prevRate > 1) stop("Previous rate must be between 0 or 1.")
+  if (!is.numeric(learningRate) || learningRate < 0 || learningRate > 1) stop("Learning rate must be between 0 or 1.")
+  if (!feedback %in% c(0, 1)) stop("Feedback must be 0 or 1.")
+  if (!is.numeric(noise) || noise < 0 || noise > 1) stop("Noise must be a probability between 0 and 1.")
+  
+  # Increase win/loss streak count
+  if (feedback == 1) {
+    winStreak <- winStreak + 1
+    lossStreak <- 0
+  } else {
+    lossStreak <- lossStreak + 1
+    winStreak <- 0
+  }
+  
+  # Toggle/Untoggle 'losing' if either streak reaches kSwitch
+  if ((losing && winStreak >= kSwitch) || (!losing && lossStreak >= kSwitch)) {
+    losing <- !losing
+  }
+  
+  # Call Random if in "losing" state else Reinforcement learning
+  if (losing) {
+    result <- RandomAgent_f(1, rate = 0.5, noise = noise, returnList=TRUE)
+  } else {
+    result <- RLAgent_f(prevRate, learningRate, feedback, noise)
+  }
+  
+  # Extract results
+  choice <- result$choice
+  currentRate <- ifelse(losing, 0.5, result$currentRate)
+  
+  # Return the results
+  return(list(
+    choice = choice,
+    currentRate = currentRate,
+    winStreak = winStreak,
+    lossStreak = lossStreak,
+    losing = losing
+  ))
+}
+  
