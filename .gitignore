@@ -3,6 +3,8 @@
 .RData
 .RData*
 .Ruserdata
+DS_Store
+**.DS_Store
 
 # ignore all data folders
 **/data/

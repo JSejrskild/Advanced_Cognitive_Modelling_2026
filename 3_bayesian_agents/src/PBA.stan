@@ -6,7 +6,7 @@ data {
   array[t] int <lower=0, upper=7> choice_1;
   array[t] int <lower=0, upper=7> group_rating;
   array[t] int <lower=0, upper=7> choice_2;
-
+  
 }
 
 parameters {
