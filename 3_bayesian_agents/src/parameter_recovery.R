@@ -105,16 +105,30 @@ fit_model <- function(full_df, model_label, i_sim){
     draws_df <- as_draws_df(model_fit$draws())
     
     if (model_label == "WBA") {
+      # WBA SAVE
+      ws_true <- data$ws[1]
+      wd_true <- data$wd[1]
+      rho_true <- wd_true / (wd_true + ws_true)
+      kappa_true <- wd_true + ws_true
+      
+      rho_hat <- max_posterior_density(draws_df$rho)
+      kappa_hat <- max_posterior_density(draws_df$kappa)
+      
       list(
         ws_hat = max_posterior_density(draws_df$ws),
         wd_hat = max_posterior_density(draws_df$wd),
+        rho_hat = rho_hat,
+        kappa_hat = kappa_hat,
         ws_true = data$ws[1],
         wd_true = data$wd[1],
+        rho_true = rho_true,
+        kappa_true = kappa_true,
         sim_id = data$sim_id[1],
         agent = model_label,
         success = TRUE
       )
     } else {
+      # PBA SAVE
       ws_true <- data$ws[1]
       wd_true <- data$wd[1]
       p_true <- wd_true / (wd_true + ws_true)
@@ -135,16 +149,30 @@ fit_model <- function(full_df, model_label, i_sim){
     
     # --- RETURN NA STRUCTURE ---
     if (model_label == "WBA") {
+      # WBA SAVE
+      ws_true <- data$ws[1]
+      wd_true <- data$wd[1]
+      rho_true <- wd_true / (wd_true + ws_true)
+      kappa_true <- wd_true + ws_true
+      
+      rho_hat <- max_posterior_density(draws_df$rho)
+      kappa_hat <- max_posterior_density(draws_df$kappa)
+      
       list(
         ws_hat = NA,
         wd_hat = NA,
+        rho_hat = NA,
+        kappa_hat = NA,
         ws_true = data$ws[1],
         wd_true = data$wd[1],
-        sim_id = i_sim,
+        rho_true = rho_true,
+        kappa_true = kappa_true,
+        sim_id = data$sim_id[1],
         agent = model_label,
-        success = FALSE
+        success = TRUE
       )
     } else {
+      # PBA SAVE
       ws_true <- data$ws[1]
       wd_true <- data$wd[1]
       p_true <- wd_true / (wd_true + ws_true)
