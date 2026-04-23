@@ -13,7 +13,8 @@
 pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "tidyr", "ggplot2", "here", "fs")
 
 print(here()) # work dir
-new_wd <- here('3_bayesian_agents') # root/path
+#new_wd <- here('3_bayesian_agents') # root/path
+new_wd <- ("/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/3_bayesian_agents")
 setwd(new_wd)
 print(list.files("."))
 # imports
@@ -26,15 +27,15 @@ set.seed(1702)
 # Set global variable(s)
 n_trials <- 80 # This is based on the data from cogsci-pre as they should match
 
-# Simulation of the task - 5 scenarios
-alpha <- c(1, 1, 1, 1, 1)   # kept neutral — alpha/beta only affect choice_1
-beta  <- c(1, 1, 1, 1, 1)   
-ws <- c(1, 10, 1,  10, 5)
-wd <- c(1,  1, 10, 10, 1)
+# Simulation of the task - 4 scenarios
+alpha <- c(1, 1, 1, 1)   # kept neutral — alpha/beta only affect choice_1
+beta  <- c(1, 1, 1, 1)   
+ws <- c(1, 10, 1,  10)
+wd <- c(1,  1, 10, 10)
 
 results_list <- list()
 
-for(i in 1:5){
+for(i in 1:4){
   
   # Ensure both models have the same 1st choice so they are comparable
   probability <- rbeta(n_trials, alpha[i], beta[i])
@@ -76,18 +77,6 @@ results_df <- do.call(rbind, results_list)
 dir_create("data")
 write_csv(results_df, "data/results_df.csv")
 
-# ------------------------------------------
-# Fitting the model in stan
-# -
-
-
-
-
-
-
-
-
-# Save the model fits
 
 
 
