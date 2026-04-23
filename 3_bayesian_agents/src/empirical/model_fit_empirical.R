@@ -11,20 +11,28 @@ print(list.files("."))
 # === Setup input data and IO ===
 datapath <- here(workdir, "data/cogsci_clean.csv")
 data <- read_csv(datapath)
-n_trials <- length(unique(data$trial))
 
 # Setup functions
 setup_stan_data <- function(df){
   
-  n_trials <- length(df$ID[df$ID == 1])
-  all_ids <- length(unique(df$ID))
+  # Start by removing all NA rows
+  df <- df %>% drop_na()
+  
+  n_trials <- nrow(df)
+  n_subjects <- length(unique(df$ID))
+  print(paste("N subjects:",n_subjects))
+  ids <- sort(unique(df$ID))
+  print(paste("Subject ids:", ids))
+  subject_ids <- as.integer(factor(df$ID))
+  print(paste("Length of subjects ids:",length(subject_ids)))
   
   stan_data <- list(
     t = n_trials,
-    subject_ids = all_ids,
-    choice_1 = df$FirstRating,
-    group_rating = df$GroupRating,
-    choice_2 = df$SecondRating,
+    n_subjects = n_subjects,
+    subject_id = subject_ids,
+    choice_1 = df$FirstRating-1,
+    group_rating = df$GroupRating-1,
+    choice_2 = df$SecondRating-1
   )
   
   return(stan_data)
@@ -37,18 +45,12 @@ fit_model <- function(model_label, data){
   modelfit_name <- paste0(model_label, "_precogsci_modelfit.rds")
   modelfit_path <- here(output_dir, modelfit_name)
   
-  model_name <- paste0(model_label, ".stan")
-  stanmodel_path <- here(workdir, "src", model_name)
+  model_name <- paste0(model_label, "_subjects.stan")
+  stanmodel_path <- here(workdir, "src/empirical", model_name)
   model <- cmdstan_model(stanmodel_path)
   
   # Stan data — select based on model label
-  # stan_data <- if (model_label == "WBA") {
-  #   setup_stan_data_WBA(data)
-  # } else if (model_label == "PBA") {
-  #   setup_stan_data_PBA(data)
-  # } else {
-  #   stop(paste0("Unknown model: ", model_label))
-  # }
+  stan_data <- setup_stan_data(data)
   
   # === Fit model ===
   model_fit <- model$sample(
@@ -56,7 +58,7 @@ fit_model <- function(model_label, data){
     seed = 1702,
     chains = 4,
     parallel_chains = 4,
-    iter_warmup = 1000,
+    iter_warmup = 2000,
     iter_sampling = 2000,
     refresh = 500
   )
@@ -73,6 +75,7 @@ model_labels <- c("WBA","PBA")
 
 for(label in model_labels){
     
-  fit_model(model_label = label, data = scenario_data, i_scenario = i)
+  fit_model(model_label = label, data = data)
   
 }
+
