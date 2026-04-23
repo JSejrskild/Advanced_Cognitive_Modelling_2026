@@ -17,6 +17,7 @@ pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "ti
   setwd(workdir)
   print(list.files("."))
 }
+
 # Internal imports
 source("src/modules/diagnose.R")
 
