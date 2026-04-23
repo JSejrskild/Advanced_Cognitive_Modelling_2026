@@ -1,13 +1,22 @@
-
 # load packages
-pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "tidyr", "ggplot2", "here", "fs",
-               "cmdstanr", "posterior", "priorsense", "patchwork")
-# set working dir
-print(here())
-workdir <- here('3_bayesian_agents') # root/path
-#setwd(workdir)
-workdir <- setwd('/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/3_bayesian_agents')
-print(list.files("."))
+pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "tidyr", "ggplot2", "here", "fs", "cmdstanr",
+                "posterior", "patchwork", "bayesplot", "priorsense")
+# Set working dir
+{
+  print(paste0("Repository is currently opened in root dir: ", here()))
+  repo_root <- "Advanced_Cognitive_Modelling_2026"
+  target <- "3_bayesian_agents"
+  
+  if (grepl(paste0(repo_root, "$"), here::here())) {
+    workdir <- here::here(target)  # root/path
+  } else if (grepl(paste0(target, "$"), here::here())) {
+    workdir <- here::here()
+  } else {
+    warning(paste("Please open the folder root in either the parent", repo_root, "OR", target))
+  }
+  setwd(workdir)
+  print(list.files("."))
+}
 
 #Data list
 fit_wba <- list(
@@ -135,8 +144,8 @@ ggsave(
   dpi = 300
 )
 
-
 # 3. prior sensitivity
+sim_data <- read.csv("data/results_df.csv")
 
 # Parameters per model
 model_params <- list(
@@ -146,13 +155,11 @@ model_params <- list(
 
 scenarios <- unique(sim_data$scenario)
 
-# Loop over all fits and generate plots
-plots <- map(model_labels, function(label) {
+results <- imap(model_params, function(params, label) {
   map(scenarios, function(i) {
     
-    # Load saved fit
     modelfit_name <- paste0(label, "_scenario", i, "_modelfit.rds")
-    modelfit_path <- here(workdir, "output", modelfit_name)
+    modelfit_path <- here::here(target, "output", modelfit_name)
     
     if (!file.exists(modelfit_path)) {
       warning(paste0("Fit not found: ", modelfit_path))
@@ -160,9 +167,14 @@ plots <- map(model_labels, function(label) {
     }
     
     fit <- readRDS(modelfit_path)
-    params <- model_params[[label]]
     
-    # Run powerscale sensitivity
+    # --- sensitivity ---
+    sensitivity <- priorsense::powerscale_sensitivity(
+      fit,
+      variable = params
+    )
+    
+    # --- plot ---
     ps <- powerscale_sequence(fit)
     
     p <- powerscale_plot_dens(ps, variables = params) +
@@ -176,15 +188,40 @@ plots <- map(model_labels, function(label) {
         legend.position  = "bottom"
       )
     
-    # Save plot
     plot_name <- paste0("priorsens_", label, "_scenario", i, ".png")
-    plot_path <- here(workdir, "figures", plot_name)
+    plot_path <- here::here(target, "figures", plot_name)
+    
     ggsave(plot_path, plot = p, width = 8, height = 5, dpi = 300)
-    print(paste0("Saved: ", plot_path))
+    message("Saved: ", plot_path)
     
-    return(p)
-    
+    return(list(
+      plot = p,
+      sensitivity = sensitivity,
+      model = label,
+      scenario = i
+    ))
   })
-}) 
+})
 
 
+sens_table <- results |>
+  flatten() |>
+  compact() |>
+  map_dfr(function(x) {
+    as.data.frame(x$sensitivity) |>
+      mutate(
+        model = x$model,
+        scenario = x$scenario
+      )
+  })
+
+sens_table <- sens_table |>
+  mutate(
+    across(where(is.numeric), ~ round(.x, 4))
+  )
+
+tables_by_model <- sens_table |>
+  group_split(model) |>
+  setNames(unique(sens_table$model))
+
+print(tables_by_model)
