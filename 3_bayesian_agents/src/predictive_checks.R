@@ -22,7 +22,7 @@ fit_list <- list(
   PBAscenario4 = PBA_scenario4_modelfit)
 
 # Generalized Extraction Function for Posteriors
-extract_predictive_data <- function(fit, data, scenario_name, target_var = "posterior_pred") {
+extract_sum_predictive_data <- function(fit, data, scenario_name, target_var = "posterior_pred") {
   obs_df <- tibble(
     obs_id = seq_len(nrow(data)),
     choice_1  = data$choice_1,
@@ -56,24 +56,84 @@ extract_predictive_data <- function(fit, data, scenario_name, target_var = "post
     ) |>
     dplyr::left_join(obs_summary, by = c("choice_1", "group_rating")) |>
     dplyr::mutate(
-      social_evidence = factor(
-        group_rating, levels = 0:7,
-        labels = c("1", "2", "3", "4","5","6","7","8")
-      ),
-      Scenario = scenario_name
+      scenario = scenario_name
     )
   
   return(pred_summary)
 }
 
+# Generalized Extraction Function for Posteriors
+extract_draws <- function(fit, data, scenario_name, target_var = "posterior_pred") {
+  obs_df <- tibble(
+    obs_id = seq_len(nrow(data)),
+    choice_1  = data$choice_1,
+    group_rating  = data$group_rating,
+    choice_2 = data$choice_2
+  )
+  
+  pred_samples <- posterior::as_draws_df(fit$draws(target_var)) |>
+    dplyr::select(-.chain, -.iteration) |> 
+    tidyr::pivot_longer(
+      cols = dplyr::starts_with(target_var), 
+      names_to = "obs_id", 
+      values_to = "pred"
+    ) |>
+    dplyr::mutate(obs_id = readr::parse_number(obs_id),
+                  scenario = scenario_name
+    )
+  
+  return(pred_samples)
+}
 
+# Generalized Extraction Function for Posteriors
+extract_prior_pred <- function(fit, data, scenario_name, target_var = "prior_pred") {
+  obs_df <- tibble(
+    obs_id = seq_len(nrow(data)),
+    choice_1  = data$choice_1,
+    group_rating  = data$group_rating,
+    choice_2 = data$choice_2
+  )
+  
+  prior_pred_samples <- posterior::as_draws_df(fit$draws(target_var)) |>
+    dplyr::select(-.chain, -.iteration) |> 
+    tidyr::pivot_longer(
+      cols = dplyr::starts_with(target_var), 
+      names_to = "obs_id", 
+      values_to = "pred"
+    ) |>
+    dplyr::mutate(obs_id = readr::parse_number(obs_id),
+                  scenario = scenario_name
+    )
+  
+  return(prior_pred_samples)
+}
 
 # Extract POSTERIOR predictive checks
 posterior_predictive_check <- imap_dfr(fit_list, function(fit, scenario) {
-  extract_predictive_data(
+  extract_sum_predictive_data(
     fit = fit, 
     data = sim_list[[scenario]], 
     scenario_name = scenario,
     target_var = "posterior_pred"
+  )
+})
+
+# Extract draws
+
+predictive_draws <- imap_dfr(fit_list, function(fit, scenario) {
+  extract_draws(
+    fit = fit, 
+    data = sim_list[[scenario]], 
+    scenario_name = scenario,
+    target_var = "posterior_pred"
+  )
+})
+
+prior_predictive_check <- imap_dfr(fit_list, function(fit, scenario) {
+  extract_prior_pred(
+    fit = fit, 
+    data = sim_list[[scenario]], 
+    scenario_name = scenario,
+    target_var = "prior_pred"
   )
 })
