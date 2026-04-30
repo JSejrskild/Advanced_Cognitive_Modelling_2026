@@ -1,7 +1,11 @@
 .Rproj.user
 .Rhistory
 .RData
+.RData*
 .Ruserdata
 
 # ignore all data folders
 **/data/
+**/output/
+**/figures/
+.positai
