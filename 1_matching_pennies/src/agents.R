@@ -46,6 +46,27 @@ WSLSAgent_f <- function(prevChoice, feedback, noise = 0) {
   return(list(choice=choice))
 }
 
+<<<<<<< HEAD
+RLAgent_f <- function(prevrate, feedback, learningRate = 0.1, noise = 0) {
+  # Input validation
+  if (!is.numeric(prevrate) || prevrate < 0 || prevrate > 1) stop("Previous rate must be a probability between 0 and 1.")
+  if (!feedback %in% c(0, 1)) stop("Feedback must be 0 or 1.")
+  if (!is.numeric(noise) || noise < 0 || noise > 1) stop("Noise must be a probability between 0 and 1.")
+  
+  # Core RL logic:
+  # update belief based on prior belief + prediction error
+  
+  rate <- prevrate + learningRate * (feedback - prevrate)
+  
+  choice <- rbinom(1, size = 1, prob = rate)
+  
+  if (noise > 0 && runif(1) < noise) {
+    # Override with a random 50/50 choice
+    choice <- sample(c(0, 1), 1)
+  }
+  
+  return(list(choice = choice, rate = rate))
+=======
 RLAgent_f <- function(prevRate, learningRate, feedback, noise = 0) {
   # Input validation
   if (!is.numeric(prevRate) || prevRate < 0 || prevRate > 1) stop("Previous rate must be between 0 or 1.")
@@ -69,6 +90,7 @@ RLAgent_f <- function(prevRate, learningRate, feedback, noise = 0) {
   
   return(list(choice = choice,
               currentRate = currentRate))
+>>>>>>> 887ace0f8f4cf3e979cea3c763937c356fbd375f
 }
 
 # Reinforcement Learning + Random Mixture model agent
