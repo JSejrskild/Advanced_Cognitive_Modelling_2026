@@ -13,8 +13,8 @@
 pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "tidyr", "ggplot2", "here", "fs")
 
 print(here()) # work dir
-#new_wd <- here('3_bayesian_agents') # root/path
-new_wd <- ("/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/3_bayesian_agents")
+new_wd <- here('3_bayesian_agents') # root/path
+#new_wd <- ("/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/3_bayesian_agents")
 setwd(new_wd)
 print(list.files("."))
 # imports

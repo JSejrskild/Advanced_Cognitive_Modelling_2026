@@ -32,7 +32,6 @@ n_trials <- 80 # This is based on the data from cogsci-pre as they should match
 # and run this n times to see if we can recover different combinations 
 
 
-
 results_list <- list()
 
 alpha <- 1
@@ -95,7 +94,5 @@ results_df <- do.call(rbind, results_list)
 
 dir_create("data")
 write_csv(results_df, "data/results_recov.csv")
-
-
 
 
