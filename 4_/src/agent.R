@@ -1,40 +1,5 @@
-#prototype agent
+#Function for updating the protorype
 
-prototype_agent <- function(id, stimuli, n_trials, init_sigma, init_mu, q_val, r_val, seed){
-  schedule <- make_subject_schedule(stimuli, )
-}
-
-
-
-
-#function to make subject schedule
-
-make_subject_schedule <- function(stimulus_info, n_blocks, seed) {
-  set.seed(seed)
-  n_stim <- nrow(stimulus_info)
-  
-  sequence <- unlist(lapply(seq_len(n_blocks), function(b) {
-    sample(stimulus_info$stimulus, n_stim, replace = FALSE)
-  }))
-  
-  tibble(
-    trial_within_subject = seq_along(sequence),
-    block                = rep(seq_len(n_blocks), each = n_stim),
-    stimulus_id          = sequence
-  ) |>
-    left_join(stimulus_info, by = c("stimulus_id" = "stimulus")) |>
-    rename(category_feedback = category_true) |>
-    dplyr::select(trial_within_subject, block, stimulus_id,
-                  height, position, category_feedback)
-}
-
-
-
-
-
-
-# One update step of a multivariate Kalman filter.
-# Returns updated mean vector, covariance matrix, and Kalman gain.
 multivariate_kalman_update <- function(mu_prev,      # previous mean vector
                                        sigma_prev,    # previous covariance matrix
                                        observation,   # observed feature vector
@@ -70,4 +35,93 @@ multivariate_kalman_update <- function(mu_prev,      # previous mean vector
   sigma_new <- (sigma_new + t(sigma_new)) / 2
   
   list(mu = mu_new, sigma = sigma_new, k = K)
+}
+
+#function for simulating kalman agent
+prototype_kalman <- function(r_value,
+                             q_value,
+                             obs,
+                             cat_one,
+                             initial_mu         = NULL,
+                             initial_sigma_diag = 10.0,
+                             quiet              = TRUE) {
+  n_trials   <- nrow(obs)
+  n_features <- ncol(obs)
+  
+  if (is.null(initial_mu)) {
+    musafe_init <- rep(2.5, n_features)
+    mudanger_init <- rep(2.5, n_features)
+  } else {
+    musafe_init <- initial_mu[[1]]
+    mudanger_init <- initial_mu[[2]]
+  }
+  
+  prototype_safe <- list(mu = musafe_init, sigma = diag(initial_sigma_diag, n_features))
+  prototype_danger <- list(mu = mudanger_init, sigma = diag(initial_sigma_diag, n_features))
+  r_matrix        <- diag(r_value, n_features)
+  q_matrix        <- diag(q_value, n_features)
+  
+  response_probs <- numeric(n_trials)
+  
+  log_sum_exp <- function(v) {
+    m <- max(v)
+    m + log(sum(exp(v - m)))
+  }
+  
+  for (i in seq_len(n_trials)) {
+    if (!quiet && i %% 20 == 0) cat("Trial", i, "\n")
+    
+    current_obs <- as.numeric(obs[i, ])
+    
+    # ── Prediction step: add process noise to both prototypes ──────────────
+    # Reflects potential drift in category location since last trial.
+    # When q_value = 0 this reduces to the static-target filter.
+    prototype_safe$sigma <- prototype_safe$sigma + q_matrix
+    prototype_danger$sigma <- prototype_danger$sigma + q_matrix
+    
+    # ── Decision ─────────────────────────────────────────────────────────────
+    cov_safe <- prototype_safe$sigma + r_matrix
+    cov_danger <- prototype_danger$sigma + r_matrix
+    
+    log_prob_safe <- tryCatch(
+      mvtnorm::dmvnorm(current_obs, mean = prototype_safe$mu,
+                       sigma = cov_safe, log = TRUE),
+      error = function(e) -Inf
+    )
+    log_prob_danger <- tryCatch(
+      mvtnorm::dmvnorm(current_obs, mean = prototype_danger$mu,
+                       sigma = cov_danger, log = TRUE),
+      error = function(e) -Inf
+    )
+    
+    if (!is.finite(log_prob_safe) && !is.finite(log_prob_danger)) {
+      prob_cat_danger <- 0.5
+    } else if (!is.finite(log_prob_safe)) {
+      prob_cat_danger <- 1.0
+    } else if (!is.finite(log_prob_danger)) {
+      prob_cat_danger <- 0.0
+    } else {
+      prob_cat_danger <- exp(log_prob_danger - log_sum_exp(c(log_prob_safe, log_prob_danger)))
+    }
+    response_probs[i] <- pmax(1e-9, pmin(1 - 1e-9, prob_cat_danger))
+    
+    # ── Update (measurement update for the correct category only) ────────────
+    true_cat <- cat_one[i]
+    if (true_cat == 1) {
+      upd <- multivariate_kalman_update(prototype_danger$mu, prototype_danger$sigma,
+                                        current_obs, r_matrix)
+      prototype_danger$mu    <- upd$mu
+      prototype_danger$sigma <- upd$sigma
+    } else {
+      upd <- multivariate_kalman_update(prototype_safe$mu, prototype_safe$sigma,
+                                        current_obs, r_matrix)
+      prototype_safe$mu    <- upd$mu
+      prototype_safe$sigma <- upd$sigma
+    }
+  }
+  
+  tibble(
+    prob_danger    = response_probs,
+    sim_response = rbinom(n_trials, 1, response_probs)
+  )
 }
