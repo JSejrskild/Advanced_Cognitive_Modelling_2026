@@ -101,17 +101,21 @@ ppc_summary_table <- posterior_predictive_check |>
     error = pred_mean - obs_mean,
     
     # 3. Absolute error (usually more interpretable)
-    abs_error = abs(error)
+    abs_error = abs(error),
+    
+    # Credible interval
+    credible_interval = upper - lower
   )
 
 model_summary <- ppc_summary_table |>
   mutate(Model = ifelse(grepl("^WBA", scenario), "WBA", "PBA")) |>
-  group_by(Model, choice_1) |>
+  group_by(Model) |>
   summarise(
-    #coverage_rate = mean(covered),
+    coverage_rate = mean(covered),
     mean_abs_error = mean(abs_error),
-    #mean_error = mean(error),
-   # n = n(),
+    mean_error = mean(error),
+    n = n(),
+    credible_interval = mean(credible_interval),
   
     .groups = "drop"
   )
