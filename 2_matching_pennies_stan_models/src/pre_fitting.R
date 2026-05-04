@@ -1,6 +1,8 @@
 # set working dir
 print(getwd())
-<<<<<<< HEAD
+
+target_dir <- "C:/Users/anelo/OneDrive/Documents/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
+
 #target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
 setwd('/work/ACM_2026/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models')
 #target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
@@ -8,14 +10,15 @@ setwd('/work/ACM_2026/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_
 #  setwd(target_dir)
 #}
 print(getwd())
-=======
+
 target_dir <- "/Users/peli/Projects/Repositories/Advanced_Cognitive_Modelling_2026/2_matching_pennies_stan_models"
+
 if (basename(getwd()) != "2_matching_pennies_stan_models") {
   setwd(target_dir)
 }
 setwd(target_dir)
 print(getwd()) # !WD root should be 2_matching_pennies_stan_models
->>>>>>> 248bf4b7f5777c7d056acbca6daf5a694c0acc9d
+
 print(list.files("."))
 workdir <- getwd()
 # imports
@@ -24,21 +27,25 @@ pacman::p_load("tidyverse", "cmdstanr", "here", "posterior", "bayesplot", "patch
 fpath <- "data/RL_vs_WSLS.csv"
 simdata <- read_csv(fpath)
 
-<<<<<<< HEAD
+
 # Maybe choose some specific data or loop across it.
 testdata <- simdata %>% 
+
+  select(agent_id, trial, choicesA, choicesB, learningRate, noise) %>% 
+
   select(agent_id, trial, choicesA, winA, learningRate, noise, choicesB) %>% 
+
   filter(learningRate == 0.5, noise == 0)
 
 inspect_data <- simdata %>% 
   select(agent_id, trial, choicesA, winA, learningRate, noise, winB) %>% 
   filter(learningRate == 0.5, noise == 0)
-=======
+
 outputdir <- paste0(workdir,"/output")
 model_file <- paste0(outputdir, "/rlmodel_fit.rds")
 
 RUN_MODEL_FIT = TRUE # if false we read in previously saved model file
->>>>>>> 248bf4b7f5777c7d056acbca6daf5a694c0acc9d
+
 
 if (RUN_MODEL_FIT){
   # === SET INPUT DATA ===
@@ -93,7 +100,7 @@ if (RUN_MODEL_FIT){
   fit_rl <- readRDS(model_file)
 }
 
-<<<<<<< HEAD
+
 # setup stan data structure
 sdata <- list(
   t = length(testdata$choicesA),
@@ -123,9 +130,13 @@ fit_rl <- rlmodel$sample( # set configuations
 
 # Save the fitted model object
 #fit_rl$save_object(file= model_file)
+
+#fit_rl$summary()
+fit_rl$draws("alpha")|> posterior::summarise_draws()
+
 print(fit_rl$summary())
 print(plogis(as.numeric(fit_rl$summary("alpha")['mean'])))
-=======
+
 # --------------------------------------------
 
 # === MCMC DIAGNOSITCS ===
@@ -161,7 +172,6 @@ diagnostics <- function(fit_object){
     warning("WARNING: Insufficient Effective Sample Size. Autocorrelation is too high. Run longer chains.")
   }
 }
->>>>>>> 248bf4b7f5777c7d056acbca6daf5a694c0acc9d
 
 diagnostics(fit_rl)
 
