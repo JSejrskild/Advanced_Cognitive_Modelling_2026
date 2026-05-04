@@ -17,12 +17,20 @@ model{
   array[t] real V; // Each trial has a belief/rate (V)
   V[1] = initialV; // Set the first belief to the hardcoded initialV
   
+  // Priors // hvordan forventer vi at alpha ser ud?(vores prior, som vi bruger til at finde post) log post density dist(lpdf), vi tror LR kan være mange værdier men højst sandsynligt ikke meget høj eller meget lav(0 og 1), ud fra mu og sd
+  target += normal_lpdf(alpha_logit | alpha_prior_mu, alpha_prior_sd );
+  
+  for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
+    V[i] = V[i-1] + inv_logit(alpha_logit) * (feedback[i-1] - V[i-1]);
+    target += binomial_lpmf(choice[i] | 1, V[i]); //du skl tage choice ud fra V[i] som er regnet ud over
+
   // Priors
   target += normal_lpdf(alpha_logit | alpha_prior_mu, alpha_prior_sd ); //prior as normal distribution on the logit scale 
   
   for (i in 2:t){ // Ensures that we have first trial to get feedback and belief from
     V[i] = V[i-1] + inv_logit(alpha_logit) * (feedback[i-1] - V[i-1]); //RW update of value estimate, learning 
     target += binomial_lpmf(choice[i] | 1, V[i]); // probability of choice given the current belief
+
   }
 }
 
