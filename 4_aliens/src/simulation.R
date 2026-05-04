@@ -1,10 +1,14 @@
 #import packages
-pacman::p_load('tidyverse','purrr','parallel','furrr','future','dplyr','here')
+pacman::p_load('tidyverse','purrr','parallel','furrr','future','dplyr','here','fs')
 print(getwd())
 workdir <- here("4_aliens")
 cat("Workdir:", workdir)
 setwd(workdir)
 source("src/agent.R")
+# setup dirs
+output_dir <- here(workdir, "output")
+dir_create(output_dir, recurse = TRUE)
+
 #create the stimuli
 
 #the columns we need:
@@ -133,3 +137,6 @@ all_stimuli <- generate_subjects_stimuli(n_subjects)
 
 results <- simulate_all_subjects(all_stimuli, simconfig = simulation_config)
 
+# save as csv 
+filepath <- here(output_dir, "simdata.csv")
+write_csv(results, filepath)
