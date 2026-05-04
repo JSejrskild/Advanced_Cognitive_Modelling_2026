@@ -26,32 +26,38 @@ pacman::p_load('tidyverse','purrr','parallel','furrr','future','dplyr')
 #stimuli 1-32 in a new random order).
 
 # generate the different possibilites
+n_subjects <- 20
 
 # Generate all combinations
-
 stimuli <- expand.grid(rep(list(c(0, 1)), 5))
 
 #give columns names
-
 colnames(stimuli) <- c("eyes", "legs", "colors", "spots", "arms")
 
-# add dangerous 
+# Add dangerous column
 # Add column wih stim_number
-
-
 stimuli <- stimuli %>%
   mutate(dangerous = ifelse(spots == 1 & eyes == 1, 1, 0),
          stimulus = seq(1:32))
- 
 
-# shuffle stimuli data
+# Function to create shuffled stimuli for one subject
+create_subject_stimuli <- function(subject_id) {
+  sessions <- 3
+  # Shuffle stimuli for this subject
+  shuffled_stimuli <- stimuli %>% sample_frac(1)
+  
+  # Create 3 copies with session column
+  session_stimuli <- lapply(1:sessions, function(session) {
+    shuffled_stimuli %>%
+      mutate(session = session, subject = subject_id)
+  })
+  
+  # Combine all sessions for this subject
+  bind_rows(session_stimuli)
+}
 
-stimuli <- stimuli %>% sample_frac(1)
-<<<<<<< HEAD
-=======
+# Generate stimuli for all subjects
+all_stimuli <- bind_rows(lapply(1:n_subjects, create_subject_stimuli))
 
-
-
-
-
->>>>>>> e350a301765b92954a02597c4cac60dc13466dc4
+# View the result
+head(all_stimuli)
