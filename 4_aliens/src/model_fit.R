@@ -16,9 +16,8 @@ dir_create(output_dir, recurse = TRUE)
 sim_fpath <- "output/simdata.csv"
 sim_data <- read_csv(sim_fpath)
 
-<<<<<<< HEAD
+
 # Setup stan data
-=======
 emp_fpath <- "output/AlienData.csv"
 emp_data <- read_csv(emp_fpath)
 emp_data <- emp_data %>%
@@ -34,7 +33,6 @@ emp_data <- emp_data %>%
 
 
 # Setup stan data (SIM)
->>>>>>> origin/main
 setup_stan_data_prototype_sim <- function(df){
   
   observation <- as.matrix(df[, 1:5])
@@ -87,7 +85,6 @@ setup_stan_data_prototype_emp <- function(df){
     prior_logr_sd = 1,
     
     prior_logq_mean = 0,
->>>>>>> origin/main
     prior_logq_sd = 1
   )
   
