@@ -50,8 +50,19 @@ prior_posterior_update <- function(n_subjects, fit_object_tag){
     
     cat("Loading:", subject_filepath, "\n")
     
-    fit_object <- read_rds(subject_filepath)
-    df <- as_draws_df(fit_object)
+    # Try to load the file, return NULL if it fails
+    tryCatch({
+      fit_object <- readRDS(subject_filepath)
+      df <- as_draws_df(fit_object)
+    }, error = function(e) {
+      message("Skipping ", subject_filepath, " due to error: ", e$message)
+      return(NULL)  # Return NULL to skip this iteration
+    })
+    
+    # If loading failed, return NULL
+    if (is.null(fit_object) || is.null(df)) {
+      return(NULL)
+    }
     
     sim_sub <- sim_data %>% filter(subject == id)
     
@@ -123,7 +134,7 @@ prior_posterior_update <- function(n_subjects, fit_object_tag){
 }
 
 n_subjects <- 20
-fit_tags <- c("subjectsim")
+fit_tags <- c("subjectsim", "subjectemp")
 
 for(tag in fit_tags){
   prior_posterior_update(n_subjects, tag)
