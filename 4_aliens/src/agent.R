@@ -121,7 +121,7 @@ multivariate_kalman_update <- function(mu_prev,      # previous mean vector
   I     <- diag(n_dim)
   
   # Kalman gain: K = Sigma_prev * (Sigma_prev + R)^{-1}
-  S     <- sigma_prev + r_matrix
+  S <- sigma_prev + r_matrix
   S_inv <- tryCatch(
     solve(S),
     error = function(e) {
