@@ -57,7 +57,8 @@ generate_subjects_stimuli <- function(n_subjects, sessions=1){
     # Create 3 copies with session column
     session_stimuli <- lapply(1:sessions, function(session) {
       shuffled_stimuli %>%
-        mutate(session = session, subject = subject_id)
+        mutate(session = session, subject = subject_id,
+               trial = seq(1:32))
     })
     
     # Combine all sessions for this subject
@@ -72,68 +73,128 @@ generate_subjects_stimuli <- function(n_subjects, sessions=1){
 simulate_all_subjects <- function(
     all_stimuli,
     simconfig
-    ) {
+) {
   
   n_subjects <- length(unique(all_stimuli$subject))
-  results_list <- list()  # Initialize a list to store results for each subject
+  results_list <- vector("list", n_subjects)
   
-  for (i in 1:n_subjects){
-    # subset data for subject and in the right formats
-    subject_stimuli <- all_stimuli %>% 
-      filter(subject==i)
+  # Helper:
+  # - scalar -> reuse for everyone
+  # - vector/list length n_subjects -> index by subject
+  get_subject_param <- function(x, i, n_subjects, param_name) {
     
-    stimuli_matrix <- subject_stimuli %>%
-      select(eyes, legs, colors, spots, arms) %>%  # Replace with your actual column names
-      as.matrix()
-    
-    cat_true_vec <- subject_stimuli %>% 
-      select(dangerous)
-    cat_true_vec <- unlist(cat_true_vec)
-    cat("cat_true_vec", cat_true_vec)
-    
-    # init_sigma, init_mu, q_val and r_val can also be a list of length n_subjects
-    # check if this is the case, then index if true
-    for (param in c("init_sigma", "init_mu", "q_val", "r_val")) {
-      config_val <- simconfig[[param]]
-      if (is.list(config_val)) {
-        if (length(config_val) != n_subjects) {
-          stop(paste("Length of", param, "in simconfig does not match n_subjects."))
-        }
-        simconfig[[param]] <- config_val[[i]]
+    # list input
+    if (is.list(x)) {
+      
+      if (length(x) == 1) {
+        return(x[[1]])
       }
+      
+      if (length(x) == n_subjects) {
+        return(x[[i]])
+      }
+      
+      stop(
+        paste0(
+          param_name,
+          " must have length 1 or n_subjects"
+        )
+      )
     }
     
-    # Now call prototype_agent with the updated simconfig
+    # atomic vector / scalar input
+    if (length(x) == 1) {
+      return(x)
+    }
+    
+    if (length(x) == n_subjects) {
+      return(x[i])
+    }
+    
+    stop(
+      paste0(
+        param_name,
+        " must have length 1 or n_subjects"
+      )
+    )
+  }
+  
+  for (i in seq_len(n_subjects)) {
+    
+    # subset subject data
+    subject_stimuli <- all_stimuli %>%
+      filter(subject == i)
+    
+    stimuli_matrix <- subject_stimuli %>%
+      select(eyes, legs, colors, spots, arms) %>%
+      as.matrix()
+    
+    cat_true_vec <- subject_stimuli %>%
+      pull(dangerous)
+    
+    # subject-specific params
+    init_sigma <- get_subject_param(
+      simconfig$init_sigma,
+      i,
+      n_subjects,
+      "init_sigma"
+    )
+    
+    init_mu <- get_subject_param(
+      simconfig$init_mu,
+      i,
+      n_subjects,
+      "init_mu"
+    )
+    
+    q_val <- get_subject_param(
+      simconfig$q_val,
+      i,
+      n_subjects,
+      "q_val"
+    )
+    
+    r_val <- get_subject_param(
+      simconfig$r_val,
+      i,
+      n_subjects,
+      "r_val"
+    )
+    
+    # run simulation
     sim_result <- prototype_agent(
       stimuli = stimuli_matrix,
       cat_true = cat_true_vec,
-      init_sigma = simconfig$init_sigma,
-      init_mu = simconfig$init_mu,
-      q_val = simconfig$q_val,
-      r_val = simconfig$r_val,
+      init_sigma = init_sigma,
+      init_mu = init_mu,
+      q_val = q_val,
+      r_val = r_val,
       seed = simconfig$seed
     )
     
-    cat("Succesfully ran sim for subject", i)
-    
+    cat("Successfully ran sim for subject", i, "\n")
     
     combined_result <- cbind(
-      subject_stimuli,  # Original dataframe
-      as.data.frame(sim_result)  # Convert sim_result to dataframe and append
-    ) %>% 
+      subject_stimuli,
+      as.data.frame(sim_result)
+    ) %>%
       mutate(
-        correct = as.integer(dangerous==sim_response),
-        performance = cumsum(correct) / row_number()
+        correct = as.integer(dangerous == sim_response),
+        performance = cumsum(correct) / row_number(),
+        
+        # store actual values used
+        init_sigma = init_sigma,
+        init_mu = init_mu,
+        q_val = q_val,
+        r_val = r_val
       )
     
-    
-    # Store the combined result for this subject
     results_list[[i]] <- combined_result
   }
-  # Combine all results into a single dataframe
+  
   final_results <- bind_rows(results_list)
   
-  return(final_results)  # Return the final combined results
+  return(final_results)
 }
 
 n_subjects <- 20
