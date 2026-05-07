@@ -14,23 +14,32 @@ dir_create(output_dir, recurse = TRUE)
 n_ppc_samples <- 500
 
 ppc_log_r  <- rnorm(n_ppc_samples, 0, 1)
-ppc_log_q  <- rnorm(n_ppc_samples, -2, 1)
-ppc_r      <- exp(ppc_log_r)
-ppc_q      <- exp(ppc_log_q)
-ppc_sched  <- make_subject_schedule(stimulus_info, n_blocks, seed = 999)
+ppc_log_q  <- rnorm(n_ppc_samples, 0, 1)
+r_values      <- exp(ppc_log_r)
+q_values      <- exp(ppc_log_q)
 
-prior_pred_curves <- results
+prior_simulation_config <- list(
+  r_value = r_values,
+  q_value = q_values,
+  init_mu = 2.5,
+  init_sigma = 2.5,
+  seed = 129
+)
+
+prior_pc_stimuli <- generate_subjects_stimuli(n_subjects = n_ppc_samples)
+
+prior_pred_curves <- simulate_all_subjects(prior_pc_stimuli, simconfig = prior_simulation_config)
 
 ppc_summary <- prior_pred_curves |>
   group_by(trial) |>
   summarise(
-    q05 = quantile(cum_acc, 0.05), q25 = quantile(cum_acc, 0.25),
-    q50 = median(cum_acc),
-    q75 = quantile(cum_acc, 0.75), q95 = quantile(cum_acc, 0.95),
+    q05 = quantile(performance, 0.05), q25 = quantile(performance, 0.25),
+    q50 = median(performance),
+    q75 = quantile(performance, 0.75), q95 = quantile(performance, 0.95),
     .groups = "drop"
   )
 
-ggplot(ppc_summary, aes(x = trial)) +
+prior_pred_plot <- ggplot(ppc_summary, aes(x = trial)) +
   geom_ribbon(aes(ymin = q05, ymax = q95), fill = "#009E73", alpha = 0.20) +
   geom_ribbon(aes(ymin = q25, ymax = q75), fill = "#009E73", alpha = 0.40) +
   geom_line(aes(y = q50), color = "#006D4E", linewidth = 1) +
@@ -41,3 +50,5 @@ ggplot(ppc_summary, aes(x = trial)) +
     subtitle = "Ribbons: 50% and 90% prior predictive intervals\nPriors: log(r) ~ Normal(0, 1), log(q) ~ Normal(-2, 1)",
     x = "Trial", y = "Cumulative Accuracy"
   )
+
+
