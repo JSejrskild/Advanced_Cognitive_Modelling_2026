@@ -35,7 +35,7 @@ for (file in emp_fit_list) {
 
 #Compute choice from p
 
-make_ppc_choices <- function(draws_df) {
+make_ppc_choices_emp <- function(draws_df) {
   
   p_cols <- paste0("p[", 1:104, "]")
   
@@ -50,3 +50,26 @@ make_ppc_choices <- function(draws_df) {
     as.data.frame(choice_mat)
   )
 }
+
+emp_ppc_list <- lapply(emp_draws_list, make_ppc_choices_emp)
+
+
+make_ppc_choices_sim <- function(draws_df) {
+  
+  p_cols <- paste0("p[", 1:32, "]")
+  
+  p_mat <- as.matrix(draws_df[, p_cols])
+  
+  choice_mat <- ifelse(p_mat < 0.5, 0, 1)
+  
+  colnames(choice_mat) <- paste0("choice[", 1:32, "]")
+  
+  cbind(
+    draws_df[, c(".chain", ".iteration", ".draw")],
+    as.data.frame(choice_mat)
+  )
+}
+
+sim_ppc_list <- lapply(sim_draws_list, make_ppc_choices_sim)
+
+
