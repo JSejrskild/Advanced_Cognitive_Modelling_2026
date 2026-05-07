@@ -38,7 +38,12 @@ pattern <- here(output_dir, "{id}_subjectsim_data_modelfit.rds")
 filepath <- glue(pattern)
 fit_object <- read_rds(filepath)
 df <- as_draws_df(fit_object)
-df$q_prior_pred
+hist(df$q_prior_pred)
+df$r_value
+sub_df <- sim_data %>% filter(
+  subject==id
+)
+hist(unique(sim_data$q_val))
 
 # 1. Posterior prediction 
 prior_posterior_update <- function(n_subjects, fit_object_tag){
@@ -71,13 +76,13 @@ prior_posterior_update <- function(n_subjects, fit_object_tag){
       
       # r
       r_prior = df$r_prior_pred,
-      r_post  = df$log_r,
-      r_true  = log(sim_sub$r_val[1]),
+      r_post  = df$r_value,
+      r_true  = sim_sub$r_val[1],
       
       # q
       q_prior = df$q_prior_pred,
-      q_post  = df$log_q,
-      q_true  = log(sim_sub$q_val[1])
+      q_post  = df$q_value,
+      q_true  = sim_sub$q_val[1]
     )
   })
   
