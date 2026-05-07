@@ -40,110 +40,80 @@ df$q_prior_pred
 # 1. Posterior prediction 
 all_plots <- list()
 n_subjects <- 20
-for(id in 1:n_subjects){
+plot_data <- map_dfr(1:n_subjects, function(id) {
   
   filepattern <- here(output_dir, "{id}_subjectsim_data_modelfit.rds")
   subject_filepath <- glue(filepattern)
   
-  cat("Running for:", subject_filepath, "\n")
+  cat("Loading:", subject_filepath, "\n")
   
   fit_object <- read_rds(subject_filepath)
   df <- as_draws_df(fit_object)
   
-  posterior_r <- df$log_r
-  posterior_q <- df$log_q
+  sim_sub <- sim_data %>% filter(subject == id)
   
-  prior_r <- df$r_prior_pred
-  prior_q <- df$q_prior_pred
-  
-  true_r <- sim_data %>%
-    filter(subject == id) %>%
-    pull(r_val)
-  
-  true_q <- sim_data %>%
-    filter(subject == id) %>%
-    pull(q_val)
-  
-  # ----- R parameter plot -----
-  r_df <- tibble(
-    value = c(prior_r, posterior_r),
-    type = c(
-      rep("prior", length(prior_r)),
-      rep("posterior", length(posterior_r))
-    )
+  tibble(
+    subject = id,
+    
+    # r
+    r_prior = df$r_prior_pred,
+    r_post  = df$log_r,
+    r_true  = log(sim_sub$r_val[1]),
+    
+    # q
+    q_prior = df$q_prior_pred,
+    q_post  = df$log_q,
+    q_true  = log(sim_sub$q_val[1])
   )
-  
-  r_plot <- ggplot(r_df, aes(x = value, fill = type)) +
-    geom_density(alpha = 0.4) +
-    geom_vline(
-      xintercept = true_r,
-      linetype = "dashed",
-      color = "black",
-      alpha = 0.7
-    ) +
-    scale_fill_manual(values = c(
-      "prior" = "#d73027",
-      "posterior" = "#4575b4"
-    )) +
-    theme_bw() +
-    labs(
-      title = paste0("log_r (true = ", round(true_r, digits = 2),")"),
-      x = "log_r",
-      y = "Density",
-      fill = ""
-    )
-  
-  # ----- Q parameter plot -----
-  q_df <- tibble(
-    value = c(prior_q, posterior_q),
-    type = c(
-      rep("prior", length(prior_q)),
-      rep("posterior", length(posterior_q))
-    )
-  )
-  
-  q_plot <- ggplot(q_df, aes(x = value, fill = type)) +
-    geom_density(alpha = 0.4) +
-    geom_vline(
-      xintercept = true_q,
-      linetype = "dashed",
-      color = "black",
-      alpha = 0.7
-    ) +
-    scale_fill_manual(values = c(
-      "prior" = "#d73027",
-      "posterior" = "#4575b4"
-    )) +
-    theme_bw() +
-    labs(
-      title = paste("log_q (true = ", round(true_q, digits = 2),")"),
-      x = "log_q",
-      y = "Density",
-      fill = ""
-    )
-  
-    # --- Combined plot ---
-  subject_plot <- (r_plot + q_plot +
-                     plot_layout(guides = "collect")) +
-    theme(legend.position = "right") +
-    plot_annotation(title = paste0("Subject ", id))
-  
-  all_plots[[id]] <- subject_plot
-  
-  ggsave(
-    filename = here(figures_dir, paste0("prior_pred_sub-", id, ".png")),
-    plot = all_plots[[id]],
-    width = 10,
-    height = 6
-  )
-}
+})
 
-final_plot <- wrap_plots(all_plots, ncol = 4) +
-  plot_layout(guides = "collect")
+r_long <- plot_data %>%
+  select(subject, r_prior, r_post, r_true) %>%
+  pivot_longer(cols = c(r_prior, r_post),
+               names_to = "type",
+               values_to = "value") %>%
+  mutate(parameter = "log_r",
+         true = r_true)
+
+
+q_long <- plot_data %>%
+  select(subject, q_prior, q_post, q_true) %>%
+  pivot_longer(cols = c(q_prior, q_post),
+               names_to = "type",
+               values_to = "value") %>%
+  mutate(parameter = "log_q",
+         true = q_true)
+
+plot_long <- bind_rows(r_long, q_long) %>%
+  mutate(type = recode(type,
+                       r_prior = "prior",
+                       r_post  = "posterior",
+                       q_prior = "prior",
+                       q_post  = "posterior"))
+
+final_plot <- ggplot(plot_long, aes(x = value, fill = type)) +
+  geom_density(alpha = 0.4) +
+  geom_vline(aes(xintercept = true, linetype = "True Value"), color = "black") +
+  facet_grid(rows = vars(subject), cols = vars(parameter), scales = "free_x") +
+  scale_fill_manual(values = c(
+    "prior" = "#d73027",
+    "posterior" = "#4575b4"
+  )) +
+  scale_linetype_manual(
+    name = "",          # Empty name to keep it clean, or use "Reference"
+    values = c("True Value" = "dashed"),
+    guide = guide_legend(override.aes = list(color = "black")) # Ensure line is black in legend
+  ) +
+  theme_bw() +
+  labs(
+    x = "value",
+    y = "density",
+    fill = ""
+  )
 
 ggsave(
-  filename = here(figures_dir, "all_subjects_prior_posterior.pdf"),
+  filename = here(figures_dir, "all_subjects_prior_posterior_faceted.png"),
   plot = final_plot,
-  width = 24,
-  height = 30
+  width = 10,
+  height = 14
 )
