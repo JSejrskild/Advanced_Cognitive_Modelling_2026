@@ -6,7 +6,7 @@ cat("Workdir:", workdir)
 setwd(workdir)
 source("src/agent.R")
 # setup dirs
-output_dir <- here(workdir, "output")
+data_dir <- here(workdir, "data")
 dir_create(output_dir, recurse = TRUE)
 
 #create the stimuli
@@ -216,5 +216,5 @@ all_stimuli <- generate_subjects_stimuli(n_subjects)
 results <- simulate_all_subjects(all_stimuli, simconfig = simulation_config)
 
 # save as csv 
-filepath <- here(output_dir, "simdata.csv")
+filepath <- here(data_dir, "simdata.csv")
 write_csv(results, filepath)
