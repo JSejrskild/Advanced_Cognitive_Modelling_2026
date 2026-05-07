@@ -4,12 +4,14 @@ pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "ti
 # set working dir
 print(here())
 workdir <- here('3_bayesian_agents') # root/path
+#setwd(workdir)
+workdir <- setwd('/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/3_bayesian_agents')
 setwd(workdir)
-#workdir <- setwd('/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/3_bayesian_agents')
 print(list.files("."))
 
 # === Setup input data and IO ===
 datapath <- here(workdir, "data/cogsci_clean.csv")
+output_dir <- here(workdir, "output")
 data <- read_csv(datapath)
 
 # Setup functions

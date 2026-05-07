@@ -3,7 +3,7 @@ pacman::p_load('tidyverse','purrr','parallel','furrr','future','dplyr','here','f
 print(getwd())
 workdir <- here("4_aliens")
 cat("Workdir:", workdir)
-setwd(workdir)
+#setwd(workdir)
 source("src/agent.R")
 # setup dirs
 output_dir <- here(workdir, "output")
