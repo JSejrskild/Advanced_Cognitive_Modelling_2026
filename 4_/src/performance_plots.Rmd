@@ -1,0 +1,345 @@
+---
+title: "performance_plots"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+```
+
+
+```{r}
+
+knitr::opts_knit$set(root.dir = "~/Advanced_Cognitive_Modelling_2026/4_")
+
+```
+
+
+```{r}
+#load data
+
+data <- read_csv("~/Advanced_Cognitive_Modelling_2026/4_/data/AlienData.txt")
+
+simdata <- read_csv("~/Advanced_Cognitive_Modelling_2026/4_/data/simdata.csv")
+
+
+```
+
+
+```{r}
+
+#FOR EMPIRICAL DATA
+
+#in response column, 1 and 2 are 0(no danger) and 3 and 4 are 1(danger)
+data <- data %>% 
+  mutate(response = ifelse(response %in% c(1, 2), 0, 1))
+
+#keep only session 1 and condition 1
+data <- data %>% 
+  filter(session == 1 & condition == 1)
+
+
+## calculate mean of corrects for each trials for all subjects
+data <- data %>% 
+  group_by(trial) %>% 
+  mutate(mean_correct = mean(correct, na.rm = TRUE)) %>% 
+  ungroup()
+
+
+#calculating cumulative win rate for subject 1
+data_sub1 <- data %>%
+  filter(subject == 1) %>%
+  mutate(cumulative_correct = cumsum(correct) / trial)
+
+
+#save data
+
+# setwd("~/Advanced_Cognitive_Modelling_2026/4_/data")
+# 
+# write.csv(data, "data_cleaned.csv", row.names = FALSE)
+# 
+
+
+```
+
+
+```{r}
+### FOR SIMULATED DATA
+
+
+#make trial column
+simdata <- simdata %>%
+  group_by(subject) %>%
+  mutate(trial = row_number()) %>%
+  ungroup()
+
+## calculate mean of corrects for each trials for all subjects
+simdata <- simdata %>% 
+  group_by(trial) %>% 
+  mutate(mean_correct = mean(correct, na.rm = TRUE)) %>% 
+  ungroup()
+
+
+#subsetting to only subject 1 for plotting
+simdata_sub1 <- simdata %>%
+  filter(subject == 1)
+
+#calculating cumulative win rate
+simdata_sub1 <- simdata %>%
+  filter(subject == 1) %>%
+  mutate(cumulative_correct = cumsum(correct) / trial)
+
+
+
+
+
+
+```
+
+
+```{r}
+#plot of wins over time
+
+### Empirical data - one subject
+
+wins_emp_sub1 <- ggplot(data_sub1, aes(x = trial)) + 
+  
+  geom_line(aes(y = cumulative_correct, color = "Cumulative wins"), size = 0.75)  +
+  geom_point(aes(y = correct, color = factor(correct)), alpha = 0.6) +
+  geom_hline(yintercept = 0.5, linetype = "solid", alpha = 0.5) +
+  
+  ylim(0, 1) +
+  theme_classic() +
+  
+  scale_color_manual(
+    name = "Legend",
+    values = c(
+      "Cumulative wins" = "darkgreen", 
+      "0" = "red",
+      "1" = "green"),
+      #"Correct guess" = "green"), 
+      #  "Dangerous" = "red", 
+      #  "Response" = "blue"), 
+  
+     
+  labels = c(
+      "Cumulative wins" = "Cumulative wins",
+      "0" = "Wrong guess",
+      "1" = "Correct guess"
+    )
+    
+
+  ) + 
+  
+  labs(
+    title = "Performance over trials - Empirical",
+    subtitle = "Example of one subject for all trials",
+    x = "Trial Number",
+    y = "Proportion Correct"
+)
+
+wins_emp_sub1
+
+
+
+### Empirical data - mean of all subjects
+
+# wins_emp_mean <- ggplot(data, aes(x = trial)) + 
+#   
+#   #geom_line(aes(y = cumulative_correct, color = "Cumulative wins"), size = 0.75)  +
+#   geom_point(aes(y = mean_correct, color = mean_correct > 0.5), alpha = 0.6) +
+#   geom_hline(yintercept = 0.5, linetype = "solid", alpha = 0.5) +
+#   
+#   ylim(0, 1) +
+#   theme_classic() +
+#   
+#   scale_color_manual(
+#     name = "Legend",
+#     values = c(
+#       "Cumulative wins" = "darkgreen",
+#       "TRUE" = "green",
+#       "FALSE" = "red"),
+#       #"mean_correct" = "blue"),
+#       #"0" = "red",
+#       #"1" = "green"),
+#       #"Correct guess" = "green"), 
+#       #  "Dangerous" = "red", 
+#       #  "Response" = "blue"), 
+#   
+#      
+#   labels = c(
+#       "Cumulative wins" = "Cumulative wins",
+#       "TRUE" = "Average correct > 0.5",
+#       "FALSE" = "Average correct <= 0.5",
+#       "0" = "Wrong guess",
+#       "1" = "Correct guess"
+#     )
+#     
+# 
+#   ) + 
+#   
+#   labs(
+#     title = "Mean performance over trials - Empirical",
+#     subtitle = "Average correct for all subject for all trials",
+#     x = "Trial Number",
+#     y = "Proportion Correct"
+# )
+# 
+# 
+# 
+# #wins_emp_mean
+
+```
+
+
+
+
+```{r}
+
+### Simulated data - one subject
+wins_sim_sub1 <- ggplot(simdata_sub1, aes(x = trial)) + 
+  
+  geom_line(aes(y = cumulative_correct, color = "Cumulative wins"), size = 0.75)  +
+  geom_point(aes(y = correct, color = factor(correct)), alpha = 0.6) +
+  geom_hline(yintercept = 0.5, linetype = "solid", alpha = 0.5) +
+  
+  ylim(0, 1) +
+  theme_classic() +
+  
+  scale_color_manual(
+    name = "Legend",
+    values = c(
+      "Cumulative wins" = "darkgreen", 
+      "0" = "red",
+      "1" = "green"),
+      #"Correct guess" = "green"), 
+      #  "Dangerous" = "red", 
+      #  "Response" = "blue"), 
+  
+     
+  labels = c(
+      "Cumulative wins" = "Cumulative wins",
+      "0" = "Wrong guess",
+      "1" = "Correct guess"
+    )
+    
+
+  ) + 
+  
+  labs(
+    title = "Performance over trials - Simulated",
+    subtitle = "Example of one subject for all trials",
+    x = "Trial Number",
+    y = "Proportion Correct"
+)
+
+wins_sim_sub1
+
+
+
+# ### Simulated data - mean of all subjects
+# 
+# wins_sim_mean <- ggplot(simdata, aes(x = trial)) + 
+#   
+#   #geom_line(aes(y = cumulative_correct, color = "Cumulative wins"), size = 0.75)  +
+#   geom_point(aes(y = mean_correct, color = mean_correct > 0.5), alpha = 0.6) +
+#   geom_hline(yintercept = 0.5, linetype = "solid", alpha = 0.5) +
+#   
+#   ylim(0, 1) +
+#   theme_classic() +
+#   
+#   scale_color_manual(
+#     name = "Legend",
+#     values = c(
+#       "Cumulative wins" = "darkgreen",
+#       "TRUE" = "green",
+#       "FALSE" = "red"),
+#       #"mean_correct" = "blue"),
+#       #"0" = "red",
+#       #"1" = "green"),
+#       #"Correct guess" = "green"), 
+#       #  "Dangerous" = "red", 
+#       #  "Response" = "blue"), 
+#   
+#      
+#   labels = c(
+#       "Cumulative wins" = "Cumulative wins",
+#       "TRUE" = "Average correct > 0.5",
+#       "FALSE" = "Average correct <= 0.5",
+#       "0" = "Wrong guess",
+#       "1" = "Correct guess"
+#     )
+#     
+# 
+#   ) + 
+#   
+#   labs(
+#     title = "Mean performance over trials - Simulated",
+#     subtitle = "Average correct for all subject for all trials",
+#     x = "Trial Number",
+#     y = "Proportion Correct"
+# )
+# 
+# 
+# 
+# 
+# wins_sim_mean
+
+
+```
+
+
+```{r}
+
+wins_emp_sub1
+wins_emp_mean
+wins_sim_sub1
+wins_sim_mean
+
+```
+
+
+```{r}
+#histogram plot
+
+#EMPIRICAL
+
+wins_emp_mean_histo <- ggplot(data_sub1, aes(x = trial, y = mean_correct)) + 
+  
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.6, bins = 32) + 
+  geom_hline(yintercept = 0.5, linetype = "solid", alpha = 0.5) +
+  
+  theme_classic() +
+
+  labs(
+    title = "Mean performance over trials - Empirical",
+    subtitle = "Mean correct for all subjects and all trials",
+    x = "Trial Number",
+    y = "Proportion Correct"
+)
+
+
+wins_emp_mean_histo 
+
+#SIMULATED
+
+wins_sim_mean_histo <- ggplot(simdata_sub1, aes(x = trial, y = mean_correct)) + 
+  
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.6, bins = 32) + 
+  geom_hline(yintercept = 0.5, linetype = "solid", alpha = 0.5) +
+  
+  theme_classic() +
+
+  labs(
+    title = "Mean performance over trials - Simulated",
+    subtitle = "Mean correct for all subjects and all trials",
+    x = "Trial Number",
+    y = "Proportion Correct"
+)
+
+
+wins_sim_mean_histo 
+
+
+```
