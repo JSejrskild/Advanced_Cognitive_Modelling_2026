@@ -33,7 +33,7 @@ emp_data <- emp_data %>%
 # Setup stan data (SIM)
 setup_stan_data_prototype_sim <- function(df){
   
-  observation <- as.matrix(df[, c(1, 4)])
+  observation <- as.matrix(df[, 1:5])
   
   stan_data <- list(
     ntrials = nrow(observation),
@@ -44,8 +44,8 @@ setup_stan_data_prototype_sim <- function(df){
     
     obs = observation,
     
-    initial_mu_cat0 = c(2.5, 2.5),
-    initial_mu_cat1 = c(2.5, 2.5),
+    initial_mu_cat0 = c(2.5, 2.5, 2.5, 2.5, 2.5),
+    initial_mu_cat1 = c(2.5, 2.5, 2.5, 2.5, 2.5),
     
     initial_sigma_diag = 10.0,
     
@@ -63,7 +63,7 @@ setup_stan_data_prototype_sim <- function(df){
 # Setup stan data (EMP)
 setup_stan_data_prototype_emp <- function(df){
 
-  observation <- as.matrix(df[, c(1, 4)])
+  observation <- as.matrix(df[, 1:5])
   
   stan_data <- list(
     ntrials = nrow(observation),
@@ -74,8 +74,8 @@ setup_stan_data_prototype_emp <- function(df){
     
     obs = observation,
     
-    initial_mu_cat0 = c(2.5, 2.5),
-    initial_mu_cat1 = c(2.5, 2.5),
+    initial_mu_cat0 = c(2.5, 2.5, 2.5, 2.5, 2.5),
+    initial_mu_cat1 = c(2.5, 2.5, 2.5, 2.5, 2.5),
     
     initial_sigma_diag = 10.0,
     
