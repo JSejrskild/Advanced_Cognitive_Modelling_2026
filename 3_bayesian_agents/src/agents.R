@@ -49,7 +49,7 @@ PBA_agent_f <- function(n_trials, alpha, beta, ws, wd, choice_1){
   group_rating    <- feedback_result$group_rating
   feedback_draw   <- feedback_result$feedback_draw
   
-  # Ensure that the weights are proportional and therefor just one p 
+  # Ensure that the weights are proportional and therefore just one p 
   p = wd / (wd + ws)
   
   # PBA equation

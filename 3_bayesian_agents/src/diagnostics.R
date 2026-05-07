@@ -1,3 +1,6 @@
+# Diagnostics script that makes each fit undergo a series of checks (see modules/diagnose.R)
+# Additionally, we plot trace plots for WBA and PBA
+
 # load packages
 pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "tidyr", "ggplot2", "here", "fs",
                "cmdstanr", "posterior", "patchwork", "bayesplot")
@@ -17,11 +20,10 @@ pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "ti
   setwd(workdir)
   print(list.files("."))
 }
-
 # Internal imports
 source("src/modules/diagnose.R")
 
-color_scheme_set("viridis")
+color_scheme_set("viridis") # set bayesplot color scheme
 
 # === Validating Model Fit ===
 output_dir <- here(workdir, "output")
