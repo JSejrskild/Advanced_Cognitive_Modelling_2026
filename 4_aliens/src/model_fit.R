@@ -3,10 +3,10 @@
 pacman::p_load("tidyverse", "purrr", "patchwork", "parallel", "furrr", "future", "dplyr", "tidyr", "ggplot2", "here", "fs",
                "cmdstanr", "posterior")
 print(getwd())
-#workdir <- here("4_aliens")
-workdir <- setwd("/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/4_aliens")
+workdir <- here("4_aliens")
+#workdir <- setwd("/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/4_aliens")
 cat("Workdir:", workdir)
-#setwd(workdir)
+setwd(workdir)
 
 # setup dirs
 output_dir <- here(workdir, "output")
@@ -16,6 +16,9 @@ dir_create(output_dir, recurse = TRUE)
 sim_fpath <- "output/simdata.csv"
 sim_data <- read_csv(sim_fpath)
 
+<<<<<<< HEAD
+# Setup stan data
+=======
 emp_fpath <- "output/AlienData.csv"
 emp_data <- read_csv(emp_fpath)
 emp_data <- emp_data %>%
@@ -31,6 +34,7 @@ emp_data <- emp_data %>%
 
 
 # Setup stan data (SIM)
+>>>>>>> origin/main
 setup_stan_data_prototype_sim <- function(df){
   
   observation <- as.matrix(df[, 1:5])
@@ -52,7 +56,7 @@ setup_stan_data_prototype_sim <- function(df){
     prior_logr_mean = 0,
     prior_logr_sd = 1,
     
-    prior_logq_mean = 0,
+    prior_logq_mean = -2,
     prior_logq_sd = 1
   )
   
@@ -83,6 +87,7 @@ setup_stan_data_prototype_emp <- function(df){
     prior_logr_sd = 1,
     
     prior_logq_mean = 0,
+>>>>>>> origin/main
     prior_logq_sd = 1
   )
   
@@ -129,16 +134,23 @@ data_types <- c("sim_data", "emp_data")
 
 for (data_name in data_types) {
   
-  data <- get(data_name)  
-  for (i in unique(data$subject)) {
-    
-    subject_data <- data %>% filter(subject == i, session == 1)    
-    fit_model(data = subject_data, subject = i, data_type = data_name)
-  }
+  if (data_name == "sim_data" ){
+    data <- get(data_name)  
+    for (i in unique(data$subject)) {
+      
+      subject_data <- data %>% filter(subject == i, session == 1)    
+      fit_model(data = subject_data, subject = i, data_type = data_name)
+      
+    }} else if (data_name == "emp_data" ){
+      
+      data <- get(data_name)  
+      for (i in unique(data$subject)) {
+        
+        subject_data <- data %>% filter(subject == i, session == 1, condition == 1)    
+        fit_model(data = subject_data, subject = i, data_type = data_name)   
+        
+      }
+    }
 }
-
-
-
-
 
 
