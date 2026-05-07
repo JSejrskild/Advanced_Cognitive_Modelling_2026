@@ -1,19 +1,21 @@
+#Traceplots
 pacman::p_load("tidyverse", "purrr", "patchwork", "ggplot2", "here", "fs", "bayesplot", "posterior")
 
+#Setting directories - Sorry elisius :)
 workdir    <- setwd("/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/4_aliens")
 output_dir <- here(workdir, "output")
-plots_dir  <- here(workdir, "plots")
+plots_dir  <- here(workdir, "figures")
 
 dir_create(plots_dir, recurse = TRUE)
 
-
+#Load the fits
 load_subject_draws <- function(subject_id, data_type) {
   path <- here(output_dir, paste0(subject_id, "_subject", data_type, "_modelfit.rds"))
   if (!file.exists(path)) return(NULL)
   readRDS(path)$draws(c("log_r", "log_q"))
 }
 
-
+#Plot them individually and together
 plot_traceplots <- function(subjects, data_type) {
   label          <- if (data_type == "sim_data") "Simulated" else "Empirical"
   grid_ncol      <- if (data_type == "sim_data") 4 else 5
@@ -65,5 +67,8 @@ emp_subjects <- list.files(output_dir, pattern = "_subjectemp_data_modelfit.rds"
   sub("_subjectemp_data_modelfit.rds", "", .) %>%
   as.integer()
 
+
+# Running the function to make the traceplots
 plot_traceplots(subjects = sim_subjects, data_type = "sim_data")
 plot_traceplots(subjects = emp_subjects, data_type = "emp_data")
+
