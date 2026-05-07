@@ -1,6 +1,6 @@
 #import packages
 # load packages
-pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "tidyr", "ggplot2", "here", "fs",
+pacman::p_load("tidyverse", "purrr", "patchwork", "parallel", "furrr", "future", "dplyr", "tidyr", "ggplot2", "here", "fs",
                "cmdstanr", "posterior")
 print(getwd())
 #workdir <- here("4_aliens")
@@ -16,9 +16,21 @@ dir_create(output_dir, recurse = TRUE)
 sim_fpath <- "output/simdata.csv"
 sim_data <- read_csv(sim_fpath)
 
+emp_fpath <- "output/AlienData.csv"
+emp_data <- read_csv(emp_fpath)
+emp_data <- emp_data %>%
+  mutate(stimulus = str_remove(stimulus, "\\.jpg$")) %>%
+  separate(
+    stimulus,
+    into = c("eyes", "legs", "colors", "spots", "arms"),
+    sep = 1:4
+  )
+emp_data <- emp_data %>%
+  mutate(response = ifelse(response %in% c(3, 4), 1, 0),
+         category = ifelse(response %in% c(3, 4), 1, 0))
 
 
-# Setup stan data
+# Setup stan data (SIM)
 setup_stan_data_prototype_sim <- function(df){
   
   observation <- as.matrix(df[, c(1, 4)])
@@ -37,11 +49,41 @@ setup_stan_data_prototype_sim <- function(df){
     
     initial_sigma_diag = 10.0,
     
-    prior_logr_mean = 2,
-    prior_logr_sd = 0.5,
+    prior_logr_mean = 0,
+    prior_logr_sd = 1,
     
-    prior_logq_mean = 2,
-    prior_logq_sd = 0.5
+    prior_logq_mean = 0,
+    prior_logq_sd = 1
+  )
+  
+  return(stan_data)
+}
+
+
+# Setup stan data (EMP)
+setup_stan_data_prototype_emp <- function(df){
+
+  observation <- as.matrix(df[, c(1, 4)])
+  
+  stan_data <- list(
+    ntrials = nrow(observation),
+    nfeatures = ncol(observation),
+    
+    cat_dangerous = df$correct,
+    y = df$response,
+    
+    obs = observation,
+    
+    initial_mu_cat0 = c(2.5, 2.5),
+    initial_mu_cat1 = c(2.5, 2.5),
+    
+    initial_sigma_diag = 10.0,
+    
+    prior_logr_mean = 0,
+    prior_logr_sd = 1,
+    
+    prior_logq_mean = 0,
+    prior_logq_sd = 1
   )
   
   return(stan_data)
@@ -82,16 +124,21 @@ fit_model <- function(data, subject, data_type) {
   print("Saved model fit!")
 }
 
+## Fitting the two datasets to the model
+data_types <- c("sim_data", "emp_data")
 
-for (i in 1:length(unique(sim_data$subject))) {
+for (data_name in data_types) {
   
-  subject_data <- sim_data %>% filter(subject == i)
-  
-  fit_model(data = subject_data, subject = i, data_type = "sim_data")
-
+  data <- get(data_name)  
+  for (i in unique(data$subject)) {
+    
+    subject_data <- data %>% filter(subject == i, session == 1)    
+    fit_model(data = subject_data, subject = i, data_type = data_name)
+  }
 }
 
-  
-print(unique(sim_data$subject))
-print(length(unique(sim_data$subject)))
-  
+
+
+
+
+
