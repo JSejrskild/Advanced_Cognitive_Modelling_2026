@@ -215,6 +215,6 @@ all_stimuli <- generate_subjects_stimuli(n_subjects)
 
 results <- simulate_all_subjects(all_stimuli, simconfig = simulation_config)
 
-# save as csv 
+# save as csv
 filepath <- here(data_dir, "simdata.csv")
 write_csv(results, filepath)

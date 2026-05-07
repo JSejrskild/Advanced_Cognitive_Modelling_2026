@@ -10,15 +10,16 @@ setwd(workdir)
 
 # setup dirs
 output_dir <- here(workdir, "output")
+data_dir <- here(workdir, "data")
 dir_create(output_dir, recurse = TRUE)
 
 #Setup input data
-sim_fpath <- "output/simdata.csv"
+sim_fpath <- here(data_dir,"simdata.csv")
 sim_data <- read_csv(sim_fpath)
 
 
 # Setup stan data
-emp_fpath <- "output/AlienData.csv"
+emp_fpath <- "data/AlienData.csv"
 emp_data <- read_csv(emp_fpath)
 emp_data <- emp_data %>%
   mutate(stimulus = str_remove(stimulus, "\\.jpg$")) %>%
