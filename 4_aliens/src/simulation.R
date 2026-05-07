@@ -3,7 +3,7 @@ pacman::p_load('tidyverse','purrr','parallel','furrr','future','dplyr','here','f
 print(getwd())
 workdir <- here("4_aliens")
 cat("Workdir:", workdir)
-#setwd(workdir)
+setwd(workdir)
 source("src/agent.R")
 # setup dirs
 output_dir <- here(workdir, "output")
@@ -91,12 +91,25 @@ simulate_all_subjects <- function(
     cat_true_vec <- unlist(cat_true_vec)
     cat("cat_true_vec", cat_true_vec)
     
+    # init_sigma, init_mu, q_val and r_val can also be a list of length n_subjects
+    # check if this is the case, then index if true
+    for (param in c("init_sigma", "init_mu", "q_val", "r_val")) {
+      config_val <- simconfig[[param]]
+      if (is.list(config_val)) {
+        if (length(config_val) != n_subjects) {
+          stop(paste("Length of", param, "in simconfig does not match n_subjects."))
+        }
+        simconfig[[param]] <- config_val[[i]]
+      }
+    }
+    
+    # Now call prototype_agent with the updated simconfig
     sim_result <- prototype_agent(
       stimuli = stimuli_matrix,
-      cat_true = cat_true_vec, 
+      cat_true = cat_true_vec,
       init_sigma = simconfig$init_sigma,
-      init_mu = simconfig$init_mu, 
-      q_val = simconfig$q_val, 
+      init_mu = simconfig$init_mu,
+      q_val = simconfig$q_val,
       r_val = simconfig$r_val,
       seed = simconfig$seed
     )
@@ -124,10 +137,14 @@ simulate_all_subjects <- function(
 }
 
 n_subjects <- 20
+set.seed(212)
+r_values <- rlnorm(n_subjects, -0.3, 0.6)
+q_values <- rlnorm(n_subjects, -0.3, 0.6)
+
 
 simulation_config <- list(
-  r_value = 0.2,
-  q_value = 0.2,
+  r_value = r_values,
+  q_value = q_values,
   init_mu = 2.5,
   init_sigma = 2.5,
   seed = 129

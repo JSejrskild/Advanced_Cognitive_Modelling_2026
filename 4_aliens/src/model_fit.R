@@ -3,10 +3,10 @@
 pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "tidyr", "ggplot2", "here", "fs",
                "cmdstanr", "posterior")
 print(getwd())
-#workdir <- here("4_aliens")
-workdir <- setwd("/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/4_aliens")
+workdir <- here("4_aliens")
+#workdir <- setwd("/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/4_aliens")
 cat("Workdir:", workdir)
-#setwd(workdir)
+setwd(workdir)
 
 # setup dirs
 output_dir <- here(workdir, "output")
@@ -37,11 +37,11 @@ setup_stan_data_prototype_sim <- function(df){
     
     initial_sigma_diag = 10.0,
     
-    prior_logr_mean = 2,
-    prior_logr_sd = 0.5,
+    prior_logr_mean = 0,
+    prior_logr_sd = 1,
     
-    prior_logq_mean = 2,
-    prior_logq_sd = 0.5
+    prior_logq_mean = 0,
+    prior_logq_sd = 1
   )
   
   return(stan_data)
