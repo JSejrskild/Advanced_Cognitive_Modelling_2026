@@ -16,8 +16,6 @@ dir_create(output_dir, recurse = TRUE)
 sim_fpath <- "output/simdata.csv"
 sim_data <- read_csv(sim_fpath)
 
-
-
 # Setup stan data
 setup_stan_data_prototype_sim <- function(df){
   
@@ -90,7 +88,6 @@ for (i in 1:length(unique(sim_data$subject))) {
   fit_model(data = subject_data, subject = i, data_type = "sim_data")
 
 }
-
   
 print(unique(sim_data$subject))
 print(length(unique(sim_data$subject)))
