@@ -25,7 +25,10 @@ cat("figure_dir", figures_dir)
 dir_create(figures_dir)
 output_dir <- here(workdir, "output")
 
-sim_data_path <- here(workdir, "data", "simdata.csv")
+# sim_data_path <- here(workdir, "data", "simdata.csv")
+# sim_data <- read_csv(sim_data_path)
+
+sim_data_path <- here(workdir, "output", "simdata.csv")
 sim_data <- read_csv(sim_data_path)
 
 #Data list

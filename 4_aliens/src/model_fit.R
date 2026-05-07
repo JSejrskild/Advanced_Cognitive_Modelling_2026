@@ -37,7 +37,7 @@ emp_data <- emp_data %>%
 >>>>>>> origin/main
 setup_stan_data_prototype_sim <- function(df){
   
-  observation <- as.matrix(df[, c(1, 4)])
+  observation <- as.matrix(df[, 1:5])
   
   stan_data <- list(
     ntrials = nrow(observation),
@@ -48,8 +48,8 @@ setup_stan_data_prototype_sim <- function(df){
     
     obs = observation,
     
-    initial_mu_cat0 = c(2.5, 2.5),
-    initial_mu_cat1 = c(2.5, 2.5),
+    initial_mu_cat0 = c(2.5, 2.5, 2.5, 2.5, 2.5),
+    initial_mu_cat1 = c(2.5, 2.5, 2.5, 2.5, 2.5),
     
     initial_sigma_diag = 10.0,
     
@@ -67,7 +67,7 @@ setup_stan_data_prototype_sim <- function(df){
 # Setup stan data (EMP)
 setup_stan_data_prototype_emp <- function(df){
 
-  observation <- as.matrix(df[, c(1, 4)])
+  observation <- as.matrix(df[, 1:5])
   
   stan_data <- list(
     ntrials = nrow(observation),
@@ -78,8 +78,8 @@ setup_stan_data_prototype_emp <- function(df){
     
     obs = observation,
     
-    initial_mu_cat0 = c(2.5, 2.5),
-    initial_mu_cat1 = c(2.5, 2.5),
+    initial_mu_cat0 = c(2.5, 2.5, 2.5, 2.5, 2.5),
+    initial_mu_cat1 = c(2.5, 2.5, 2.5, 2.5, 2.5),
     
     initial_sigma_diag = 10.0,
     
@@ -134,23 +134,23 @@ data_types <- c("sim_data", "emp_data")
 
 for (data_name in data_types) {
   
-  data <- get(data_name)  
-  for (i in unique(data$subject)) {
-    
-    subject_data <- data %>% filter(subject == i, session == 1)    
-    fit_model(data = subject_data, subject = i, data_type = data_name)
-  }
+  if (data_name == "sim_data" ){
+    data <- get(data_name)  
+    for (i in unique(data$subject)) {
+      
+      subject_data <- data %>% filter(subject == i, session == 1)    
+      fit_model(data = subject_data, subject = i, data_type = data_name)
+      
+    }} else if (data_name == "emp_data" ){
+      
+      data <- get(data_name)  
+      for (i in unique(data$subject)) {
+        
+        subject_data <- data %>% filter(subject == i, session == 1, condition == 1)    
+        fit_model(data = subject_data, subject = i, data_type = data_name)   
+        
+      }
+    }
 }
-<<<<<<< HEAD
-  
-print(unique(sim_data$subject))
-print(length(unique(sim_data$subject)))
-  
-=======
 
 
-
-
-
-
->>>>>>> origin/main
