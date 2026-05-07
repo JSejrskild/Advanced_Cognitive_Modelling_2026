@@ -8,7 +8,7 @@ cat("Workdir:", workdir)
 setwd(workdir)
 source("src/simulation.R")
 # setup dirs
-output_dir <- here(workdir, "output")
+output_dir <- here(workdir, "figures")
 dir_create(output_dir, recurse = TRUE)
 
 n_ppc_samples <- 500
@@ -47,8 +47,9 @@ prior_pred_plot <- ggplot(ppc_summary, aes(x = trial)) +
   scale_y_continuous(limits = c(0, 1)) +
   labs(
     title    = "Prior Predictive Check: Kalman Filter Prototype Model",
-    subtitle = "Ribbons: 50% and 90% prior predictive intervals\nPriors: log(r) ~ Normal(0, 1), log(q) ~ Normal(-2, 1)",
+    subtitle = "Ribbons: 50% and 90% prior predictive intervals\nPriors: log(r) ~ Normal(0, 1), log(q) ~ Normal(0, 1)",
     x = "Trial", y = "Cumulative Accuracy"
   )
 
 
+ggsave( filename = "figures/prior_pred_plot.jpeg")

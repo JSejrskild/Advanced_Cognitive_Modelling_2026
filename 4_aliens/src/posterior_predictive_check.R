@@ -1,6 +1,6 @@
 #import packages
 pacman::p_load('tidyverse','purrr','parallel','furrr','future','dplyr','here','fs',
-               'posterior','ggplot2','tibble','tidyr','readr')
+               'posterior','ggplot2','tibble','tidyr','readr','gtools')
 print(getwd())
 workdir <- here("4_aliens")
 cat("Workdir:", workdir)
@@ -10,60 +10,43 @@ source("src/simulation.R")
 output_dir <- here(workdir, "output")
 dir_create(output_dir, recurse = TRUE)
 
-data <- data %>% drop_na()
+#Load draws
 
-extract_sum_empirical_data_feedback <- function(fit, data, target_var = "posterior_pred") {
-  
-  obs_df <- tibble(
-    obs_id = seq_len(nrow(data)),
-    subject_id = data$ID,
-    choice_1 = data$FirstRating,
-    feedback = data$Feedback,
-    choice_2 = data$SecondRating
-  )
-  
-  pred_samples <- posterior::as_draws_df(fit$draws(target_var)) |>
-    dplyr::select(-.chain, -.iteration) |> 
-    tidyr::pivot_longer(
-      cols = dplyr::starts_with(target_var), 
-      names_to = "obs_id", 
-      values_to = "pred"
-    ) |>
-    dplyr::mutate(obs_id = readr::parse_number(obs_id))
-  
-  obs_summary <- obs_df |>
-    dplyr::group_by(subject_id, choice_1, feedback) |>
-    dplyr::summarise(obs_mean = mean(choice_2), .groups = "drop")
-  
-  pred_summary <- pred_samples |>
-    dplyr::left_join(obs_df, by = "obs_id") |>
-    dplyr::group_by(.draw, subject_id, choice_1, feedback) |>
-    dplyr::summarise(pred_mean_draw = mean(pred), .groups = "drop") |>
-    dplyr::group_by(subject_id, choice_1, feedback) |>
-    dplyr::summarise(
-      pred_mean = median(pred_mean_draw),
-      lower = quantile(pred_mean_draw, 0.025),
-      upper = quantile(pred_mean_draw, 0.975),
-      .groups = "drop"
-    ) |>
-    dplyr::left_join(
-      obs_summary,
-      by = c("subject_id", "choice_1", "feedback")
-    )
-  
-  return(pred_summary)
+fit_list <- list.files("output/")
+
+sim_fit_list <- fit_list[grepl("^[0-9]+_subjectsim_data_modelfit\\.rds$", fit_list)] 
+sim_fit_list <- mixedsort(sim_fit_list)
+
+emp_fit_list <- fit_list[grepl("^[0-9]+_subjectemp_data_modelfit\\.rds$", fit_list)] 
+emp_fit_list <- mixedsort(emp_fit_list)
+
+sim_draws_list <- list()
+emp_draws_list <- list()
+
+for (file in sim_fit_list) {
+  fit <- readRDS(file.path("output/",file))
+  sim_draws_list[[file]] <- fit$draws(format = "df")
 }
 
-## Posterior predictive check empirical
+for (file in emp_fit_list) {
+  fit <- readRDS(file.path("output/",file))
+  emp_draws_list[[file]] <- fit$draws(format = "df")
+}
 
-posterior_predictive_check_emp_pba <- extract_sum_empirical_data_feedback(
-  fit = PBA_precogsci_modelfit,
-  data = data,
-  target_var = "posterior_pred"
-)
+#Compute choice from p
 
-posterior_predictive_check_emp_wba <- extract_sum_empirical_data_feedback(
-  fit = WBA_precogsci_modelfit,
-  data = data,
-  target_var = "posterior_pred"
-)
+make_ppc_choices <- function(draws_df) {
+  
+  p_cols <- paste0("p[", 1:104, "]")
+  
+  p_mat <- as.matrix(draws_df[, p_cols])
+  
+  choice_mat <- ifelse(p_mat < 0.5, 0, 1)
+  
+  colnames(choice_mat) <- paste0("choice[", 1:104, "]")
+  
+  cbind(
+    draws_df[, c(".chain", ".iteration", ".draw")],
+    as.data.frame(choice_mat)
+  )
+}
