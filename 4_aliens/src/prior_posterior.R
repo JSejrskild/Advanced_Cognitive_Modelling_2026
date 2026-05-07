@@ -23,12 +23,12 @@ pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "ti
 figures_dir <- here(workdir, "figures")
 cat("figure_dir", figures_dir)
 dir_create(figures_dir)
-output_dir <- here(workdir, "output")
+data_dir <- here(workdir, "data")
 
 # sim_data_path <- here(workdir, "data", "simdata.csv")
 # sim_data <- read_csv(sim_data_path)
 
-sim_data_path <- here(workdir, "output", "simdata.csv")
+sim_data_path <- here(data_dir, "simdata.csv")
 sim_data <- read_csv(sim_data_path)
 
 #Data list
@@ -60,13 +60,13 @@ plot_data <- map_dfr(1:n_subjects, function(id) {
     
     # r
     r_prior = df$r_prior_pred,
-    r_post  = df$log_r,
-    r_true  = log(sim_sub$r_val[1]),
+    r_post  = df$r_value,
+    r_true  = sim_sub$r_val[1],
     
     # q
     q_prior = df$q_prior_pred,
-    q_post  = df$log_q,
-    q_true  = log(sim_sub$q_val[1])
+    q_post  = df$q_value,
+    q_true  = sim_sub$q_val[1]
   )
 })
 

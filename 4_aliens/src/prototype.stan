@@ -102,8 +102,8 @@ generated quantities {
   for (i in 1:ntrials){
     log_lik[i] = bernoulli_lpmf(y[i] | p[i]);
   }
-  r_prior_pred = normal_rng(0,1);
-  q_prior_pred = normal_rng(-2,1);
+  r_prior_pred = exp(normal_rng(prior_logr_mean,prior_logr_sd));
+  q_prior_pred = exp(normal_rng(prior_logq_mean,prior_logq_sd));
   lprior = normal_lpdf(log_r | prior_logr_mean, prior_logr_sd) +
            normal_lpdf(log_q | prior_logq_mean, prior_logq_sd);
 }
