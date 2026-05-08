@@ -22,6 +22,7 @@ pacman::p_load("tidyverse", "purrr", "parallel", "furrr", "future", "dplyr", "ti
 # set figures dir
 figures_dir <- here(workdir, "figures")
 cat("figure_dir", figures_dir)
+data_dir <- here(workdir, "data")
 dir_create(figures_dir)
 output_dir <- here(workdir, "output")
 
@@ -30,8 +31,6 @@ output_dir <- here(workdir, "output")
 
 sim_data_path <- here(workdir, "output", "simdata.csv")
 sim_data <- read_csv(sim_data_path)
-
-
 
 # 1. Posterior prediction 
 prior_posterior_update <- function(n_subjects, fit_object_tag){
@@ -126,9 +125,16 @@ prior_posterior_update <- function(n_subjects, fit_object_tag){
   )
 }
 
-n_subjects <- 20
+# --- Run Prior Posterior Update ---
 fit_tags <- c("subjectsim", "subjectemp")
 
 for(tag in fit_tags){
+  if(fit_object_tag=="subjectsim"){
+   data <- read_csv(here(data_dir, "simdata.csv"))
+  } else if (fit_object_tag=="subjectemp"){
+    data <- read_csv(here(data_dir, "AlienData.csv"))
+  }
+  n_subjects <- length(unique(data$subject))
   prior_posterior_update(n_subjects, tag)
 }
+

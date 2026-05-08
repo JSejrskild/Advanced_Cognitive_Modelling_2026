@@ -10,10 +10,11 @@ setwd(workdir)
 
 # setup dirs
 output_dir <- here(workdir, "output")
+data_dir <- here(workdir, "data")
 dir_create(output_dir, recurse = TRUE)
 
 #Setup input data
-sim_fpath <- "output/simdata.csv"
+sim_fpath <- here(data_dir,"simdata.csv")
 sim_data <- read_csv(sim_fpath)
 
 
