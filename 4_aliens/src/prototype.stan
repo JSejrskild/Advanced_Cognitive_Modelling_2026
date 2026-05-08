@@ -96,14 +96,19 @@ model {
 
 generated quantities {
   vector[ntrials] log_lik;
-  real r_prior_pred;
-  real q_prior_pred;
+  real log_r_prior;
+  real log_q_prior;
+  real r_prior;
+  real q_prior;
   real lprior;
   for (i in 1:ntrials){
     log_lik[i] = bernoulli_lpmf(y[i] | p[i]);
   }
-  r_prior_pred = normal_rng(prior_logr_mean,prior_logr_sd);
-  q_prior_pred = normal_rng(prior_logq_mean,prior_logq_sd);
+  
+  log_r_prior = normal_rng(prior_logr_mean,prior_logr_sd);
+  log_q_prior = normal_rng(prior_logq_mean,prior_logq_sd);
+  r_prior = exp(log_r_prior);
+  q_prior = exp(log_q_prior);
   lprior = normal_lpdf(log_r | prior_logr_mean, prior_logr_sd) +
            normal_lpdf(log_q | prior_logq_mean, prior_logq_sd);
 }

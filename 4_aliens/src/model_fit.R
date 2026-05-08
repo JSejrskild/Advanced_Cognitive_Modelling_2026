@@ -47,10 +47,10 @@ setup_stan_data_prototype_sim <- function(df){
     
     obs = observation,
     
-    initial_mu_cat0 = c(2.5, 2.5, 2.5, 2.5, 2.5),
-    initial_mu_cat1 = c(2.5, 2.5, 2.5, 2.5, 2.5),
+    initial_mu_cat0 = c(0.5, 0.5, 0.5, 0.5, 0.5),
+    initial_mu_cat1 = c(0.5, 0.5, 0.5, 0.5, 0.5),
     
-    initial_sigma_diag = 10.0,
+    initial_sigma_diag = 1,
     
     prior_logr_mean = 0,
     prior_logr_sd = 1,
@@ -77,10 +77,10 @@ setup_stan_data_prototype_emp <- function(df){
     
     obs = observation,
     
-    initial_mu_cat0 = c(2.5, 2.5, 2.5, 2.5, 2.5),
-    initial_mu_cat1 = c(2.5, 2.5, 2.5, 2.5, 2.5),
+    initial_mu_cat0 = c(0.5, 0.5, 0.5, 0.5, 0.5),
+    initial_mu_cat1 = c(0.5, 0.5, 0.5, 0.5, 0.5),
     
-    initial_sigma_diag = 10.0,
+    initial_sigma_diag = 1,
     
     prior_logr_mean = 0,
     prior_logr_sd = 1,

@@ -185,8 +185,10 @@ simulate_all_subjects <- function(
         # store actual values used
         init_sigma = init_sigma,
         init_mu = init_mu,
-        q_val = q_val,
-        r_val = r_val
+        log_q = q_val,
+        log_r = r_val,
+        q_val = exp(q_val),
+        r_val = exp(r_val)
       )
     
     results_list[[i]] <- combined_result
@@ -200,14 +202,14 @@ simulate_all_subjects <- function(
 n_subjects <- 20
 set.seed(212)
 r_values <- runif(n_subjects, 0, 2)
-q_values <- runif(n_subjects, 0, 2)
+q_values <- 0
 
 
 simulation_config <- list(
   r_value = r_values,
   q_value = q_values,
-  init_mu = 2.5,
-  init_sigma = 2.5,
+  init_mu = 0.5,
+  init_sigma = 1,
   seed = 129
 )
 
