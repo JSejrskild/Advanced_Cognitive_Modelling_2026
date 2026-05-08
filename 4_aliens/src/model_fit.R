@@ -19,7 +19,7 @@ sim_data <- read_csv(sim_fpath)
 
 
 # Setup stan data
-emp_fpath <- "output/AlienData.csv"
+emp_fpath <- here(data_dir,"AlienData.csv")
 emp_data <- read_csv(emp_fpath)
 emp_data <- emp_data %>%
   mutate(stimulus = str_remove(stimulus, "\\.jpg$")) %>%
@@ -53,10 +53,10 @@ setup_stan_data_prototype_sim <- function(df){
     initial_sigma_diag = 10.0,
     
     prior_logr_mean = 0,
-    prior_logr_sd = 1,
+    prior_logr_sd = 1.5,
     
-    prior_logq_mean = -2,
-    prior_logq_sd = 1
+    prior_logq_mean = 0,
+    prior_logq_sd = 1.5
   )
   
   return(stan_data)
@@ -113,7 +113,7 @@ fit_model <- function(data, subject, data_type) {
     data = stan_data,
     seed = 1702,
     chains = 4,
-    parallel_chains = 4,
+    parallel_chains = 16,
     iter_warmup = 1000,
     iter_sampling = 2000,
     refresh = 500
