@@ -204,8 +204,8 @@ q_values <- rlnorm(n_subjects, -0.3, 0.6)
 
 
 simulation_config <- list(
-  r_value = r_values,
-  q_value = 0,
+  r_value = exp(r_values),
+  q_value = exp(0),
   init_mu = 2.5,
   init_sigma = 2.5,
   seed = 129

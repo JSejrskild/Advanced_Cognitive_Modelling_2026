@@ -31,7 +31,7 @@ parameters {
 
 transformed parameters {
   real<lower=0> r_value = exp(log_r);
-  real<lower=0> q_value = exp(log_q);
+  real<lower=0> q_value = 0;
 
   array[ntrials] real<lower=1e-9, upper=1-1e-9> p; 
 
