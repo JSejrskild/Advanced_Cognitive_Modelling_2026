@@ -46,7 +46,7 @@ make_prior_posterior_plot <- function(plot_data, space, fit_object_tag, figures_
     pd <- plot_data %>%
       transmute(
         subject,
-        r_prior = r_prior_nat,          # prior already in natural space
+        r_prior = r_prior_nat,          
         r_post  = exp(r_post_log),
         r_true  = exp(r_true_log),
         q_prior = q_prior_nat,
@@ -116,7 +116,7 @@ prior_posterior_update <- function(n_subjects, fit_object_tag) {
       
       if (fit_object_tag == "subjectsim") {
         sim_sub <- sim_data %>% filter(subject == id)
-        r_true_log <- sim_sub$r_val[1]   # stored as log already
+        r_true_log <- sim_sub$r_val[1]   # stored as log 
         q_true_log <- sim_sub$q_val[1]
       } else {
         r_true_log <- NA
@@ -125,7 +125,7 @@ prior_posterior_update <- function(n_subjects, fit_object_tag) {
       
       tibble(
         subject     = id,
-        r_prior_nat = df$r_prior,      # exp(Normal) from Stan GQ
+        r_prior_nat = df$r_prior,      # exp(Normal) from Stan
         r_post_log  = df$log_r,        # log space posterior
         r_true_log  = r_true_log,
         q_prior_nat = df$q_prior,

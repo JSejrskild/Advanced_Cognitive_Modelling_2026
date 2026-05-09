@@ -10,7 +10,7 @@
 data {
   int<lower=1> ntrials;
   int<lower=1> nfeatures;
-  array[ntrials] int<lower=0, upper=1> cat_dangerous; //Correct-feedback (1 is dangerous, 0 is non-dangerous)
+  array[ntrials] int<lower=0, upper=1> cat_dangerous; //True Category (1 is dangerous, 0 is non-dangerous)
   array[ntrials] int<lower=0, upper=1> y;
   array[ntrials, nfeatures] real obs;
 
