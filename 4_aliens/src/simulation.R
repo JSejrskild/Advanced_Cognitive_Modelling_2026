@@ -7,7 +7,7 @@ setwd(workdir)
 source("src/agent.R")
 # setup dirs
 data_dir <- here(workdir, "data")
-dir_create(output_dir, recurse = TRUE)
+dir_create(data_dir, recurse = TRUE)
 
 #create the stimuli
 
@@ -199,13 +199,13 @@ simulate_all_subjects <- function(
 
 n_subjects <- 20
 set.seed(212)
-r_values <- runif(n_subjects, 0, 2)
-q_values <- runif(n_subjects, 0, 2)
+r_values <- runif(n_subjects, 0, 0.6)
+q_values <- rlnorm(n_subjects, -0.3, 0.6)
 
 
 simulation_config <- list(
-  r_value = r_values,
-  q_value = q_values,
+  r_value = exp(r_values),
+  q_value = exp(0),
   init_mu = 2.5,
   init_sigma = 2.5,
   seed = 129
