@@ -10,7 +10,7 @@
 data {
   int<lower=1> ntrials;
   int<lower=1> nfeatures;
-  array[ntrials] int<lower=0, upper=1> cat_dangerous; //Correct-feedback (1 is dangerous, 0 is non-dangerous)
+  array[ntrials] int<lower=0, upper=1> cat_dangerous; //True Category (1 is dangerous, 0 is non-dangerous)
   array[ntrials] int<lower=0, upper=1> y;
   array[ntrials, nfeatures] real obs;
 
@@ -25,8 +25,8 @@ data {
 }
 
 parameters {
-  real log_r;
-  real log_q;
+  real<lower=-2, upper=2> log_r;
+  real<lower=-2, upper=2> log_q;
 }
 
 transformed parameters {
@@ -96,19 +96,27 @@ model {
 
 generated quantities {
   vector[ntrials] log_lik;
+<<<<<<< HEAD
   real log_r_prior;
   real log_q_prior;
+=======
+>>>>>>> origin
   real r_prior;
   real q_prior;
   real lprior;
   for (i in 1:ntrials){
     log_lik[i] = bernoulli_lpmf(y[i] | p[i]);
   }
+<<<<<<< HEAD
   
   log_r_prior = normal_rng(prior_logr_mean,prior_logr_sd);
   log_q_prior = normal_rng(prior_logq_mean,prior_logq_sd);
   r_prior = exp(log_r_prior);
   q_prior = exp(log_q_prior);
+=======
+  r_prior = exp(normal_rng(prior_logr_mean,prior_logr_sd));
+  q_prior = exp(normal_rng(prior_logq_mean,prior_logq_sd));
+>>>>>>> origin
   lprior = normal_lpdf(log_r | prior_logr_mean, prior_logr_sd) +
            normal_lpdf(log_q | prior_logq_mean, prior_logq_sd);
 }

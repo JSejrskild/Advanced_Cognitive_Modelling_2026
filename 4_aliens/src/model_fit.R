@@ -4,7 +4,6 @@ pacman::p_load("tidyverse", "purrr", "patchwork", "parallel", "furrr", "future",
                "cmdstanr", "posterior")
 print(getwd())
 workdir <- here("4_aliens")
-#workdir <- setwd("/work/JohanneSejrskildRejsenhus#9686/Advanced_Cognitive_Modelling_2026/4_aliens")
 cat("Workdir:", workdir)
 setwd(workdir)
 
@@ -16,10 +15,12 @@ dir_create(output_dir, recurse = TRUE)
 #Setup input data
 sim_fpath <- here(data_dir,"simdata.csv")
 sim_data <- read_csv(sim_fpath)
+sim_data <- sim_data %>%
+  mutate(category = dangerous)
 
 
 # Setup stan data
-emp_fpath <- "data/AlienData.csv"
+emp_fpath <- here(data_dir,"AlienData.csv")
 emp_data <- read_csv(emp_fpath)
 emp_data <- emp_data %>%
   mutate(stimulus = str_remove(stimulus, "\\.jpg$")) %>%
@@ -42,7 +43,7 @@ setup_stan_data_prototype_sim <- function(df){
     ntrials = nrow(observation),
     nfeatures = ncol(observation),
     
-    cat_dangerous = df$correct,
+    cat_dangerous = df$category,
     y = df$sim_response,
     
     obs = observation,
@@ -72,21 +73,21 @@ setup_stan_data_prototype_emp <- function(df){
     ntrials = nrow(observation),
     nfeatures = ncol(observation),
     
-    cat_dangerous = df$correct,
+    cat_dangerous = df$category,
     y = df$response,
     
     obs = observation,
     
     initial_mu_cat0 = c(0.5, 0.5, 0.5, 0.5, 0.5),
     initial_mu_cat1 = c(0.5, 0.5, 0.5, 0.5, 0.5),
-    
-    initial_sigma_diag = 1,
+
+    initial_sigma_diag = 1.0,
     
     prior_logr_mean = 0,
-    prior_logr_sd = 1,
+    prior_logr_sd = .5,
     
     prior_logq_mean = -2,
-    prior_logq_sd = 1
+    prior_logq_sd = .5
   )
   
   return(stan_data)
@@ -113,7 +114,7 @@ fit_model <- function(data, subject, data_type) {
     data = stan_data,
     seed = 1702,
     chains = 4,
-    parallel_chains = 4,
+    parallel_chains = 16,
     iter_warmup = 1000,
     iter_sampling = 2000,
     refresh = 500
