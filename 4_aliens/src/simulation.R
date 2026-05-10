@@ -167,8 +167,8 @@ simulate_all_subjects <- function(
       cat_true = cat_true_vec,
       init_sigma = init_sigma,
       init_mu = init_mu,
-      q_val = exp(q_val),
-      r_val = exp(r_val),
+      q_val = q_val,
+      r_val = r_val,
       seed = simconfig$seed
     )
     
@@ -187,8 +187,8 @@ simulate_all_subjects <- function(
         init_mu = init_mu,
         log_q = q_val,
         log_r = r_val,
-        q_val = exp(q_val),
-        r_val = exp(r_val)
+        q_val = q_val,
+        r_val = r_val
       )
     
     results_list[[i]] <- combined_result
@@ -202,11 +202,11 @@ simulate_all_subjects <- function(
 n_subjects <- 20
 set.seed(212)
 
-r_values <- runif(n_subjects, 0, 0.6)
-q_values <- rlnorm(n_subjects, -0.3, 0.6)
+log_r_values <- runif(n_subjects, 0, 0.6)
+log_q_values <- rlnorm(n_subjects, -0.3, 0.6)
 
 simulation_config <- list(
-  r_value = exp(r_values),
+  r_value = exp(log_r_values),
   q_value = exp(0),
   init_mu = 2.5,
   init_sigma = 2.5,
