@@ -25,8 +25,8 @@ data {
 }
 
 parameters {
-  real<lower=-2> log_r;
-  real<lower=-2> log_q;
+  real<lower=-2, upper=5> log_r;
+  real<lower=-2, upper=5> log_q;
 }
 
 transformed parameters {
