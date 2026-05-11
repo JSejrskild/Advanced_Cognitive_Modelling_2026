@@ -53,11 +53,11 @@ setup_stan_data_prototype_sim <- function(df){
     
     initial_sigma_diag = 1,
     
-    prior_logr_mean = 0,
+    prior_logr_mean = 1,
     prior_logr_sd = 0.5,
     
-    prior_logq_mean = -2,
-    prior_logq_sd = .5
+    prior_logq_mean = 0,
+    prior_logq_sd = 1
   )
   
   return(stan_data)
@@ -83,11 +83,11 @@ setup_stan_data_prototype_emp <- function(df){
 
     initial_sigma_diag = 1.0,
     
-    prior_logr_mean = 0,
-    prior_logr_sd = .5,
+    prior_logr_mean = 2,
+    prior_logr_sd = 0.05,
     
-    prior_logq_mean = -2,
-    prior_logq_sd = .5
+    prior_logq_mean = 2,
+    prior_logq_sd = 0.05
   )
   
   return(stan_data)

@@ -119,21 +119,21 @@ prior_posterior_update <- function(n_subjects, fit_object_tag) {
       
       if (fit_object_tag == "subjectsim") {
         sim_sub <- sim_data %>% filter(subject == id)
-        r_true_log <- sim_sub$r_val[1]
-        q_true_log <- sim_sub$q_val[1]
+        r_true <- sim_sub$r_val[1]
+        q_true <- sim_sub$q_val[1]
       } else {
-        r_true_log <- NA
-        q_true_log <- NA
+        r_true <- NA
+        q_true <- NA
       }
       
       subject_df <- tibble(
         subject     = id,
         r_prior     = df$r_prior,
         r_post      = exp(df$log_r),
-        r_true      = exp(r_true_log),
+        r_true      = r_true,
         q_prior     = df$q_prior,
         q_post      = exp(df$log_q),
-        q_true      = exp(q_true_log)
+        q_true      = q_true
       )
       
       # Print summaries for this subject
@@ -147,12 +147,12 @@ prior_posterior_update <- function(n_subjects, fit_object_tag) {
         subject     = id,
         r_prior_nat = df$r_prior,
         r_post_log  = df$log_r,
-        r_true_log  = r_true_log,
+        r_true_log  = log(r_true),
         q_prior_nat = df$q_prior,
         q_post_log  = df$log_q,
-        q_true_log  = q_true_log
+        q_true_log  = log(q_true)
       )
-      
+
     }, error = function(e) {
       message("Skipping subject ", id, " — ", e$message)
       return(NULL)

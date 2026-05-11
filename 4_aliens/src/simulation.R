@@ -185,8 +185,8 @@ simulate_all_subjects <- function(
         # store actual values used
         init_sigma = init_sigma,
         init_mu = init_mu,
-        log_q = q_val,
-        log_r = r_val,
+        log_q = log(q_val),
+        log_r = log(r_val),
         q_val = q_val,
         r_val = r_val
       )
