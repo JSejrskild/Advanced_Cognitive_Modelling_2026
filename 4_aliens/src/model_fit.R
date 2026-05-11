@@ -33,7 +33,6 @@ emp_data <- emp_data %>%
   mutate(response = ifelse(response %in% c(3, 4), 1, 0),
          category = ifelse(response %in% c(3, 4), 1, 0))
 
-
 # Setup stan data (SIM)
 setup_stan_data_prototype_sim <- function(df){
   
@@ -43,7 +42,7 @@ setup_stan_data_prototype_sim <- function(df){
     ntrials = nrow(observation),
     nfeatures = ncol(observation),
     
-    cat_dangerous = df$category,
+    cat_dangerous = df$dangerous,
     y = df$sim_response,
     
     obs = observation,
@@ -51,13 +50,13 @@ setup_stan_data_prototype_sim <- function(df){
     initial_mu_cat0 = c(0.5, 0.5, 0.5, 0.5, 0.5),
     initial_mu_cat1 = c(0.5, 0.5, 0.5, 0.5, 0.5),
     
-    initial_sigma_diag = 10.0,
+    initial_sigma_diag = 1,
     
-    prior_logr_mean = 0,
-    prior_logr_sd = 1,
+    prior_logr_mean = 1,
+    prior_logr_sd = 0.5,
     
-    prior_logq_mean = -2,
-    prior_logq_sd = 1
+    prior_logq_mean = 0,
+    prior_logq_sd = 0.8
   )
   
   return(stan_data)
@@ -73,21 +72,21 @@ setup_stan_data_prototype_emp <- function(df){
     ntrials = nrow(observation),
     nfeatures = ncol(observation),
     
-    cat_dangerous = df$category,
+    cat_dangerous = df$dangerous,
     y = df$response,
     
     obs = observation,
     
     initial_mu_cat0 = c(0.5, 0.5, 0.5, 0.5, 0.5),
     initial_mu_cat1 = c(0.5, 0.5, 0.5, 0.5, 0.5),
-    
+
     initial_sigma_diag = 1.0,
     
-    prior_logr_mean = 0,
-    prior_logr_sd = .5,
+    prior_logr_mean = 1,
+    prior_logr_sd = 0.5,
     
-    prior_logq_mean = -2,
-    prior_logq_sd = .5
+    prior_logq_mean = 0,
+    prior_logq_sd = 0.8
   )
   
   return(stan_data)
@@ -142,7 +141,7 @@ for (data_name in data_types) {
       
     }} else if (data_name == "emp_data" ){
       
-      data <- get(data_name)  
+      data <- get(data_name)
       for (i in unique(data$subject)) {
         
         subject_data <- data %>% filter(subject == i, session == 1, condition == 1)    

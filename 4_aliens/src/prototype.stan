@@ -25,8 +25,8 @@ data {
 }
 
 parameters {
-  real<lower=-2, upper=2> log_r;
-  real<lower=-2, upper=2> log_q;
+  real<lower=-2, upper=5> log_r;
+  real<lower=-2, upper=5> log_q;
 }
 
 transformed parameters {
@@ -99,11 +99,14 @@ generated quantities {
   real r_prior;
   real q_prior;
   real lprior;
+  
   for (i in 1:ntrials){
     log_lik[i] = bernoulli_lpmf(y[i] | p[i]);
   }
+
   r_prior = exp(normal_rng(prior_logr_mean,prior_logr_sd));
   q_prior = exp(normal_rng(prior_logq_mean,prior_logq_sd));
+
   lprior = normal_lpdf(log_r | prior_logr_mean, prior_logr_sd) +
            normal_lpdf(log_q | prior_logq_mean, prior_logq_sd);
 }
