@@ -33,7 +33,6 @@ emp_data <- emp_data %>%
   mutate(response = ifelse(response %in% c(3, 4), 1, 0),
          category = ifelse(response %in% c(3, 4), 1, 0))
 
-
 # Setup stan data (SIM)
 setup_stan_data_prototype_sim <- function(df){
   
@@ -84,10 +83,10 @@ setup_stan_data_prototype_emp <- function(df){
     initial_sigma_diag = 1.0,
     
     prior_logr_mean = 2,
-    prior_logr_sd = 0.05,
+    prior_logr_sd = 0.1,
     
     prior_logq_mean = 2,
-    prior_logq_sd = 0.05
+    prior_logq_sd = 0.1
   )
   
   return(stan_data)
@@ -142,7 +141,7 @@ for (data_name in data_types) {
       
     }} else if (data_name == "emp_data" ){
       
-      data <- get(data_name)  
+      data <- get(data_name)
       for (i in unique(data$subject)) {
         
         subject_data <- data %>% filter(subject == i, session == 1, condition == 1)    
